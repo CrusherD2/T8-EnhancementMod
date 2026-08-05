@@ -12,6 +12,10 @@
 - ### Download the latest Enhancement Mod OR use the ``T8-EnhancementMod/ShieldConfig/project-bo4/mods/EnhancementModT8`` to copy it to bo4 directory: ``project-bo4/mods``
 - ### Then you can modify anything in this project, run ``compile_and_copy_lua.bat`` for lua, or ``compile_and_copy_scripts.bat`` for gsc/csc.
 
+- ### Compiler to use
+- #### For client gsc/csc detours: https://github.com/ate47/t7-compiler-custom
+- #### You can also use acts cod tools: https://github.com/ate47/atian-cod-tools (does not support shield client's detours!)
+
 # How to Compile (Fast File):
 - ### Download the latest Enhancement Mod OR use the ``T8-EnhancementMod/ShieldConfig/project-bo4/mods/EnhancementModT8`` to copy it to bo4 directory: ``project-bo4`` or Use the ``ShieldConfig/project-bo4/fastfile/EnhancementModT8_FF`` and copy it to bo4 directory: ``project-bo4/zone_mods``.
 - ### Download the latest [Acts Cod Tools](https://github.com/ate47/atian-cod-tools)
