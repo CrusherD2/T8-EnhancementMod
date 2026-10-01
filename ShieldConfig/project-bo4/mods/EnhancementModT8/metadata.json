@@ -446,6 +446,14 @@
         },
         {
             "type": "scriptparsetree",
+            "name": "scripts/zm_common/Bo3Slide.gsc",
+            "path": "Scripts\\Bo3Slide.gsic",
+            "hooks": [
+                "scripts/zm_common/load.gsc"
+            ]
+        },
+        {
+            "type": "scriptparsetree",
             "name": "scripts/zm_common/Enhancement.csc",
             "path": "Scripts\\Enhancement.csic",
             "hooks": [
@@ -869,6 +877,16 @@
             "type": "localizeentry",
             "name": "shield/classicmode_desc",
             "value": "Will change HUDs and gameplay a lot to make it style like bo1/2/3"
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/bo3_slide",
+            "value": "Black Ops 3 Slide"
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/bo3_slide_desc",
+            "value": "Jump-slides keep the same distance instead of getting shorter."
         },
         {
             "type": "localizeentry",

@@ -174,6 +174,7 @@ local SETTINGS = {
         { name = @"shield/classicmode_gums",  desc = @"shield/classicmode_gums_desc",  dvar = "shield_enh_Gums",                   choices = "toggle" },
         { name = @"shield/classic_loadouts",  desc = @"shield/classic_loadouts_desc",  dvar = "shield_enh_ClassicMode_Loadouts",   choices = "toggle", json_default = true },
         { name = @"shield/double_tab_toggle", desc = @"shield/double_tab_toggle_desc", dvar = "shield_enh_ClassicMode_DoubleTab2", choices = "toggle" },
+        { name = @"shield/bo3_slide",         desc = @"shield/bo3_slide_desc",         dvar = "shield_enh_BO3Slide",               choices = "toggle_on", json_default = true },
     },
 }
 
