@@ -894,56 +894,152 @@ PlayPerkAnim(str_perk)
     self thread gestures::function_f3e2696f(self, weapon, undefined, 2.5, undefined, undefined, undefined);
 }
 
+// Classic perks drink a BO4 perk's bottle/totem; while bo3port_drink holds the Classic perk's number the
+// bo3port plugin swaps that bottle's label (or the totem's icon) for the Classic perk's.
+PlayClassicPerkAnim(str_perk)
+{
+    switch (str_perk)
+    {
+        case #"specialty_wolf_protector": label = 1; break; // Jugger-Nog
+        case #"specialty_shield": label = 2; break;         // Speed Cola
+        case #"specialty_camper": label = 3; break;         // Double Tap
+        case #"specialty_awareness": label = 4; break;      // Vulture Aid
+        case #"specialty_quickrevive": label = 5; break;    // Who's Who
+        case #"specialty_zombshell": label = 6; break;      // Elemental Pop
+        default: label = 0; break;
+    }
+
+    SetDvar(#"bo3port_drink", label);
+    self PlayPerkAnim(str_perk);
+    level thread ClearClassicPerkLabel();
+}
+
+ClearClassicPerkLabel()
+{
+    level notify(#"bo3port_drink_clear");
+    level endon(#"bo3port_drink_clear");
+
+    wait 3;
+    SetDvar(#"bo3port_drink", 0);
+}
+
+WaitTillClassicPower()
+{
+    switch (BO4GetMap())
+    {
+        case "IX":
+            level flag::wait_till(#"zm_towers_pap_quest_completed");
+            break;
+
+        case "Blood":
+        case "AO":
+        case "Dead":
+        case "Tag":
+            level flag::wait_till(#"power_on1");
+            break;
+
+        case "AE":
+        case "Classified":
+        case "Voyage":
+            level flag::wait_till(#"power_on");
+            break;
+    }
+}
+
+ClassicPerkSteamFx(perk_type)
+{
+    switch (perk_type)
+    {
+        case "jugg":
+            return #"zombie/fx_perk_widows_wine_zmb";
+
+        case "double":
+            return #"zombie/fx_perk_quick_revive_zmb";
+
+        case "elemental":
+            return #"zombie/fx_perk_stamin_up_zmb";
+    }
+
+    return #"zombie/fx_perk_mule_kick_zmb";
+}
+
+ClassicPerkPowerVisuals()
+{
+    SetDvar(#"bo3port_power", 0);
+    WaitTillClassicPower();
+    SetDvar(#"bo3port_power", 1);
+
+    if (!isdefined(level.CustomClassicPerks))
+        return;
+
+    foreach (machine in level.CustomClassicPerks)
+    {
+        if (!isdefined(machine))
+            continue;
+
+        if (machine.classic_perk === "wonderfizz")
+            StartWonderfizzElectricity(machine);
+
+        if (isdefined(machine.perk_fx) && machine.perk_fx)
+            continue;
+
+        playfxontag(ClassicPerkSteamFx(machine.classic_perk), machine, "tag_origin");
+        machine.perk_fx = 1;
+    }
+}
+
+StartWonderfizzElectricity(machine)
+{
+    if (!isdefined(machine) || (isdefined(machine.fizz_electric) && machine.fizz_electric))
+        return;
+
+    machine.fizz_electric = 1;
+    machine thread WonderfizzElectricLoop();
+}
+
+WonderfizzSparkOrigin()
+{
+    forward = anglestoforward(self.angles);
+    right = anglestoright(self.angles);
+    return self.origin + (forward * randomfloatrange(5, 9)) + (right * randomfloatrange(-5, 5)) + (0, 0, randomfloatrange(30, 46));
+}
+
+WonderfizzElectricLoop()
+{
+    self endon(#"death");
+
+    while (true)
+    {
+        used = isdefined(level.Wonderfizz_IsBeingUsed) && level.Wonderfizz_IsBeingUsed;
+        playfx(#"electric/fx_elec_sparks_burst_sm_omni_blue_os", WonderfizzSparkOrigin());
+
+        if (used)
+            wait 0.9;
+        else
+            wait 1.8;
+    }
+}
+
 IsPaPOrPowerOn()
 {
     switch(BO4GetMap())
     {
         case "IX":
-        return level flag::get(#"zm_towers_pap_quest_completed");
-        break;
+            return level flag::get(#"zm_towers_pap_quest_completed");
 
         case "Blood":
-        b_bool = level flag::get(#"power_on1");
-
-        return b_bool;
-        break;
+        case "AO":
+        case "Dead":
+        case "Tag":
+            return level flag::get(#"power_on1");
 
         case "AE":
-        b_bool = level flag::get(#"power_on");
-
-        return true;
-        break;
-
-        case "AO":
-        b_bool = level flag::get(#"power_on1");
-
-        return b_bool;
-        break;
-
-        case "Dead":
-        b_bool = level flag::get(#"power_on1");
-
-        return true;
-        break;
-
-        case "Tag":
-        b_bool = level flag::get(#"power_on1");
-
-        return b_bool;
-        break;
-
         case "Classified":
-        b_bool = level flag::get(#"power_on");
-
-        return b_bool;
-        break;
-
         case "Voyage":
-        b_bool = level flag::get(#"power_on");
-
-        return true;
-        break;
+            return level flag::get(#"power_on");
     }
+
+    return false;
 }
 
 Spawn_EnhTrigger(origin, hintstring, angles, model, func, waitseconds, delete = true)

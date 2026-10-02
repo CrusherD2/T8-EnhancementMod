@@ -20,6 +20,8 @@ ClassicMode_CustomPerks()
     SpawnCustomPerk("elemental", perk_data.elemental_pos, perk_data.elemental_angles, GetPerkModel("elemental"));
 
     SpawnCustomPerk("wonderfizz", perk_data.wonderfizz_pos, perk_data.wonderfizz_angles, GetPerkModel("wonderfizz"));
+
+    level thread ClassicPerkPowerVisuals();
 }
 
 GetPerkDataForMap()
@@ -48,7 +50,7 @@ GetPerkDataForMap()
             
         case "Blood":
             data.jugg_pos = (7262, 10752, 319);
-            data.jugg_angles = (0, 70, 0);
+            data.jugg_angles = (0, 160, 0);
             data.speed_pos = (1650, 9134, 1336);
             data.speed_angles = (0, 90, 0);
             data.double_pos = (939, 8899, 1544);
@@ -82,7 +84,7 @@ GetPerkDataForMap()
             
         case "AO":
             data.jugg_pos = (-1637, -1114, -64);
-            data.jugg_angles = (0, 0, 0);
+            data.jugg_angles = (0, 90, 0);
             data.speed_pos = (-1183, -91, -62);
             data.speed_angles = (0, 160, 0);
             data.double_pos = (850, 373, 79);
@@ -116,7 +118,7 @@ GetPerkDataForMap()
             
         case "Tag":
             data.jugg_pos = (-338, 216, 7);
-            data.jugg_angles = (0, 53, 0);
+            data.jugg_angles = (0, 143, 0);
             data.speed_pos = (-2575, -74, 20);
             data.speed_angles = (0, 90, 0);
             data.double_pos = (636, -1090, 87);
@@ -133,7 +135,7 @@ GetPerkDataForMap()
             
         case "Classified":
             data.jugg_pos = (-62, 935, -511);
-            data.jugg_angles = (0, 55, 0);
+            data.jugg_angles = (0, 145, 0);
             data.speed_pos = (-1140, 1930, 16);
             data.speed_angles = (0, 180, 0);
             data.double_pos = (-865, 4997, -712);
@@ -174,24 +176,25 @@ GetPerkDataForMap()
 
 GetPerkModel(perk_type)
 {
-    is_chaos = BO4ChaosMap();
-    
+    // The bo3port plugin reskins these donors: Widow's Wine -> Jugger-Nog, Sleight -> Speed Cola,
+    // Revive -> Double Tap, Nuke -> Vulture Aid, Deadshot -> Who's Who, Marathon -> Elemental Pop,
+    // Mule Kick -> Wunderfizz.
     switch(perk_type)
     {
         case "jugg":
-            return is_chaos ? #"p7_zm_vending_widows_wine" : #"p8_zm_esc_perk_vending_cola";
+            return #"p7_zm_vending_widows_wine";
         case "speed":
             return #"p7_zm_vending_sleight";
         case "double":
-            return #"p7_zm_vending_ads";
+            return #"p7_zm_vending_revive";
 		case "vulture":
 			return #"p7_zm_vending_nuke";
 		case "whos_who":
-			return #"p7_zm_vending_revive";
+			return #"p7_zm_vending_ads";
 		case "elemental":
 			return #"p7_zm_vending_marathon";
         case "wonderfizz":
-			return #"hash_36a819a6d297514e";
+			return #"p7_zm_vending_three_gun";
         default:
             return #"";
     }
@@ -339,14 +342,13 @@ SpawnCustomPerk(perk_type, position, angles, model)
     }
     
     perk_machine = util::spawn_model(model, position, angles);
-    
+    perk_machine.classic_perk = perk_type;
+
     switch(perk_type)
     {
         case "jugg":
             perk_machine zm_unitrigger::create(&CheckStringJugg, 110);
             perk_machine thread WaitTriggerJugg();
-			playfxontag(#"zombie/fx_perk_mule_kick_zmb", perk_machine, "tag_origin");
-            perk_machine.perk_fx = 1;
 
             perk_machine thread RefundLogic(2500, "HasJugg");
 
@@ -359,8 +361,6 @@ SpawnCustomPerk(perk_type, position, angles, model)
         case "speed":
             perk_machine zm_unitrigger::create(&CheckStringSpeedCola, 110);
             perk_machine thread WaitTriggerSpeedCola();
-			playfxontag(#"zombie/fx_perk_mule_kick_zmb", perk_machine, "tag_origin");
-            perk_machine.perk_fx = 1;
 
             perk_machine thread RefundLogic(3000, "specialty_fastreload");
 
@@ -370,8 +370,6 @@ SpawnCustomPerk(perk_type, position, angles, model)
         case "double":
             perk_machine zm_unitrigger::create(&CheckStringDoubleTab, 110);
             perk_machine thread WaitTriggerDoubleTab();
-			playfxontag(#"zombie/fx_perk_mule_kick_zmb", perk_machine, "tag_origin");
-            perk_machine.perk_fx = 1;
 
             perk_machine thread RefundLogic(2000, getDvarInt("shield_enh_ClassicMode_DoubleTab2", 0) ? "specialty_doubletap2" : "specialty_rof");
 
@@ -381,8 +379,6 @@ SpawnCustomPerk(perk_type, position, angles, model)
 		case "vulture":
 			perk_machine zm_unitrigger::create(&CheckStringVulture, 110);
             perk_machine thread WaitTriggerVulture();
-			playfxontag(#"zombie/fx_perk_mule_kick_zmb", perk_machine, "tag_origin");
-            perk_machine.perk_fx = 1;
 
             perk_machine thread RefundLogic(3000, "specialty_vultureaid");
 
@@ -392,8 +388,6 @@ SpawnCustomPerk(perk_type, position, angles, model)
 		case "whos_who":
 			perk_machine zm_unitrigger::create(&CheckStringWhosWho, 110);
             perk_machine thread WaitTriggerWhosWho();
-			playfxontag(#"zombie/fx_perk_mule_kick_zmb", perk_machine, "tag_origin");
-            perk_machine.perk_fx = 1;
             
             perk_machine thread RefundLogic(2000, "specialty_whoswho");
 
@@ -403,8 +397,6 @@ SpawnCustomPerk(perk_type, position, angles, model)
         case "elemental":
             perk_machine zm_unitrigger::create(&CheckStringElemental, 110);
             perk_machine thread WaitTriggerElemental();
-            playfxontag(#"zombie/fx_perk_mule_kick_zmb", perk_machine, "tag_origin");
-            perk_machine.perk_fx = 1;
 
             perk_machine thread RefundLogic(2500, "HasElemental");
 
@@ -416,11 +408,6 @@ SpawnCustomPerk(perk_type, position, angles, model)
         case "wonderfizz":
             perk_machine zm_unitrigger::create(&CheckStringWonderfizz, 110);
             perk_machine thread WaitTriggerWonderfizz();
-            perk_machine.angles += (0, -90, 0);
-            perk_machine.origin += (0, 0, 45);
-            perk_machine SetScale(100);
-            playfxontag(#"zombie/fx_perk_mule_kick_zmb", perk_machine, "tag_origin");
-            perk_machine.perk_fx = 1;
 
             CreateCollisionForPerk(position, angles);
 
@@ -528,6 +515,125 @@ zm_perk_translate(hash_name) {
     }
 }
 
+WonderfizzDrinkLabel(hash_name)
+{
+    switch (hash_name)
+    {
+        case #"HasJugg":
+            return 1;
+        case #"specialty_fastreload":
+            return 2;
+        case #"specialty_doubletap2":
+        case #"specialty_rof":
+            return 3;
+        case #"specialty_vultureaid":
+            return 4;
+        case #"specialty_whoswho":
+            return 5;
+        case #"HasElemental":
+            return 6;
+        default:
+            return 0;
+    }
+}
+
+WonderfizzDisplayModel(hash_name)
+{
+    if (BO4ChaosMap())
+    {
+        switch (hash_name)
+        {
+            case #"HasJugg":
+                return #"hash_281d001c8d958aa6";
+            case #"specialty_fastreload":
+                return #"hash_4fe70b2de9830ba1";
+            case #"specialty_doubletap2":
+            case #"specialty_rof":
+                return #"hash_566aa9d5261924d1";
+            case #"specialty_vultureaid":
+                return #"hash_6af9235d5ba511f7";
+            case #"specialty_whoswho":
+                return #"hash_5ab0c97c0495b86d";
+            case #"HasElemental":
+                return #"hash_7ec0e3d60c3ddf98";
+        }
+
+        return zm_perk_get_viewmodel(hash_name);
+    }
+
+    switch (hash_name)
+    {
+        case #"HasJugg":
+        case #"specialty_wolf_protector":
+            return #"wpn_t8_zm_perk_bottle_bloodwolf_view";
+        case #"specialty_fastreload":
+        case #"specialty_shield":
+            return #"wpn_t8_zm_perk_bottle_victorioustortoise_view";
+        case #"specialty_doubletap2":
+        case #"specialty_rof":
+        case #"specialty_camper":
+            return #"wpn_t8_zm_perk_bottle_stronghold_view";
+        case #"specialty_vultureaid":
+        case #"specialty_awareness":
+            return #"wpn_t8_zm_perk_bottle_deathperception_view";
+        case #"specialty_whoswho":
+        case #"specialty_quickrevive":
+            return #"wpn_t8_zm_perk_bottle_quickrevive_view";
+        case #"HasElemental":
+        case #"specialty_zombshell":
+            return #"wpn_t8_zm_perk_bottle_zombshell_view";
+        case #"specialty_widowswine":
+            return #"wpn_t8_zm_perk_bottle_winterswail_view";
+        case #"specialty_staminup":
+            return #"wpn_t8_zm_perk_bottle_staminup_view";
+        case #"specialty_phdflopper":
+            return #"wpn_t8_zm_perk_bottle_phdslider_view";
+        case #"specialty_extraammo":
+            return #"wpn_t8_zm_perk_bottle_bandolier_view";
+        case #"specialty_etherealrazor":
+            return #"wpn_t8_zm_perk_bottle_etherealrazor_view";
+        case #"specialty_electriccherry":
+            return #"wpn_t8_zm_perk_bottle_electricburst_view";
+        case #"specialty_death_dash":
+            return #"wpn_t8_zm_perk_bottle_blaze_view";
+        case #"specialty_deadshot":
+            return #"wpn_t8_zm_perk_bottle_deadshot_view";
+        case #"specialty_cooldown":
+            return #"wpn_t8_zm_perk_bottle_timeslip_view";
+        case #"specialty_berserker":
+            return #"wpn_t8_zm_perk_bottle_dyingwish_view";
+        case #"specialty_additionalprimaryweapon":
+            return #"wpn_t8_zm_perk_bottle_mulekick_view";
+        default:
+            return #"wpn_t8_zm_perk_bottle_secretsauce_view";
+    }
+}
+
+SetWonderfizzRewardModel(mdl_reward, hash_name)
+{
+    mdl_reward setModel(WonderfizzDisplayModel(hash_name));
+    if (BO4ChaosMap())
+        mdl_reward SetScale(1.15);
+    else
+        mdl_reward SetScale(3.2);
+
+    label = WonderfizzDrinkLabel(hash_name);
+    level notify(#"bo3port_drink_clear");
+    SetDvar(#"bo3port_drink", label);
+}
+
+RotateWonderfizzReward()
+{
+    self endon(#"death", #"stop_bobbing");
+
+    while (true)
+    {
+        rotationSpeed = RandomFloatRange(5.5, 7.5);
+        self RotateYaw(360, rotationSpeed);
+        wait rotationSpeed;
+    }
+}
+
 zm_perk_get_viewmodel(hash_name) {
     if (BO4ChaosMap())
     {
@@ -604,7 +710,7 @@ GiveClassicPerk(name, e_player, no_anim = undefined)
 		// play anim
         if (!isDefined(no_anim))
         {
-            e_player PlayPerkAnim(#"specialty_wolf_protector");
+            e_player PlayClassicPerkAnim(#"specialty_wolf_protector");
 
             // some sound
             self waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -631,7 +737,7 @@ GiveClassicPerk(name, e_player, no_anim = undefined)
 		// play anim
         if (!isDefined(no_anim))
         {
-            e_player PlayPerkAnim(#"specialty_camper");
+            e_player PlayClassicPerkAnim(#"specialty_camper");
 
             // some sound
             self waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -652,7 +758,7 @@ GiveClassicPerk(name, e_player, no_anim = undefined)
 		// play anim
         if (!isDefined(no_anim))
         {
-            e_player PlayPerkAnim(#"specialty_quickrevive");
+            e_player PlayClassicPerkAnim(#"specialty_quickrevive");
 
             // some sound
             self waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -669,7 +775,7 @@ GiveClassicPerk(name, e_player, no_anim = undefined)
 		// play anim
         if (!isDefined(no_anim))
         {
-            e_player PlayPerkAnim(#"specialty_zombshell");
+            e_player PlayClassicPerkAnim(#"specialty_zombshell");
 
             // some sound
             self waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -687,7 +793,7 @@ GiveClassicPerk(name, e_player, no_anim = undefined)
 		// play anim
         if (!isDefined(no_anim))
         {
-            e_player PlayPerkAnim(#"specialty_awareness");
+            e_player PlayClassicPerkAnim(#"specialty_awareness");
 
             // some sound
             self waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -707,7 +813,7 @@ GiveClassicPerk(name, e_player, no_anim = undefined)
 		// play anim
         if (!isDefined(no_anim))
         {
-            e_player PlayPerkAnim(#"specialty_shield");
+            e_player PlayClassicPerkAnim(#"specialty_shield");
 
             // some sound
             self waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -849,29 +955,36 @@ WaitTriggerWonderfizz()
         random_perks_classic = array(#"HasJugg", #"specialty_doubletap2", #"specialty_whoswho", #"HasElemental", #"specialty_vultureaid", #"specialty_fastreload");
 
         level.Wonderfizz_IsBeingUsed = true;
+        playsoundatposition("zmb_rand_perk_vortex", self.origin);
 
-        forward = anglestoforward(self.angles);
+        spawn_pos = self.origin + (0, 0, 42);
 
-        // move 50 units up, 30 units forward
-        spawn_pos = self.origin + (0, 0, 5) + forward * 40;
-
-        mdl_reward = util::spawn_model(#"wpn_t8_zm_perk_bottle_bandolier_world", spawn_pos, self.angles);
-        mdl_reward SetScale(1.35);
+        if (BO4ChaosMap())
+        {
+            mdl_reward = util::spawn_model(#"hash_281d001c8d958aa6", spawn_pos, self.angles);
+            mdl_reward SetScale(1.15);
+        }
+        else
+        {
+            mdl_reward = util::spawn_model(#"wpn_t8_zm_perk_bottle_bandolier_world", spawn_pos, self.angles);
+            mdl_reward SetScale(3.2);
+        }
         mdl_reward clientfield::set("powerup_fx", 2);
 
-        mdl_reward thread RotateAndBobItem();
+        mdl_reward thread RotateWonderfizzReward();
         
         times_max = randomIntRange(10, 20);
         times = 0;
+        cycle_pool = arraycombine(random_perks, random_perks_classic, 0, 0);
 
         while(true)
         {
             if (times > times_max)
                 break;
 
-            perk_model_x = array::random(random_perks);
+            perk_model_x = array::random(cycle_pool);
 
-            mdl_reward setModel(zm_perk_get_viewmodel(perk_model_x));
+            SetWonderfizzRewardModel(mdl_reward, perk_model_x);
             
             if (e_player hasPerk(#"specialty_cooldown"))
                 wait 0.10;
@@ -912,6 +1025,7 @@ WaitTriggerWonderfizz()
             
             level.Wonderfizz_IsBeingUsed = undefined;
             
+            SetDvar(#"bo3port_drink", 0);
             mdl_reward delete();
             continue;
         }
@@ -965,7 +1079,7 @@ WaitTriggerWonderfizz()
         e_player.wonder_hint_string = #"shield/wonderfizz_get";
         e_player.wonder_hint_string_param = zm_perk_translate(random_perks_get); // the random perk here
 
-        mdl_reward setModel(zm_perk_get_viewmodel(random_perks_get));
+        SetWonderfizzRewardModel(mdl_reward, random_perks_get);
         
         self thread TimeoutWonderfizz();
         timeout = false;
@@ -980,6 +1094,7 @@ WaitTriggerWonderfizz()
                 
                 level.Wonderfizz_IsBeingUsed = undefined;
 
+                SetDvar(#"bo3port_drink", 0);
                 mdl_reward delete();
                 timeout = true;
 
@@ -1005,6 +1120,7 @@ WaitTriggerWonderfizz()
 
             // play anim
             e_player PlayPerkAnim(random_perks_get);
+            SetDvar(#"bo3port_drink", 0);
             mdl_reward delete();
 
             e_player waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -1026,6 +1142,7 @@ WaitTriggerWonderfizz()
         }
         else if (use_classic_perk)
         {
+            SetDvar(#"bo3port_drink", 0);
             mdl_reward delete();
             e_player GiveClassicPerk(random_perks_get, e_player);
         }
@@ -1110,7 +1227,7 @@ WaitTriggerElemental()
         e_player.HasElemental = true;
 
 		// play anim
-		e_player PlayPerkAnim(#"specialty_zombshell");
+		e_player PlayClassicPerkAnim(#"specialty_zombshell");
 
 		// some sound
 		self waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -1190,7 +1307,7 @@ WaitTriggerWhosWho()
         e_player perks::perk_setperk(#"specialty_whoswho");
 
 		// play anim
-		e_player PlayPerkAnim(#"specialty_quickrevive");
+		e_player PlayClassicPerkAnim(#"specialty_quickrevive");
 
 		// some sound
 		self waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -1586,7 +1703,7 @@ WaitTriggerDoubleTab()
 		e_player thread CheckPerkDownDouble();
 
 		// play anim
-		e_player PlayPerkAnim(#"specialty_camper");
+		e_player PlayClassicPerkAnim(#"specialty_camper");
 
 		// some sound
 		self waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -1688,7 +1805,7 @@ WaitTriggerVulture()
 		e_player thread CheckPerkDownVulture();
 
 		// play anim
-		e_player PlayPerkAnim(#"specialty_awareness");
+		e_player PlayClassicPerkAnim(#"specialty_awareness");
 
 		// some sound
 		self waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -1793,7 +1910,7 @@ WaitTriggerSpeedCola()
 		e_player thread CheckPerkDownSpeed();
 
 		// play anim
-		e_player PlayPerkAnim(#"specialty_shield");
+		e_player PlayClassicPerkAnim(#"specialty_shield");
 
 		// some sound
 		self waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -1893,7 +2010,7 @@ WaitTriggerJugg()
 		e_player thread CheckPerkDownJugg();
 
 		// play anim
-		e_player PlayPerkAnim(#"specialty_wolf_protector");
+		e_player PlayClassicPerkAnim(#"specialty_wolf_protector");
 
 		// some sound
 		self waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
