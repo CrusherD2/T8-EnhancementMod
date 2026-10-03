@@ -30,11 +30,9 @@ copy /Y "hashes.txt" %DEST%
 
 set GAME=C:\Program Files (x86)\Call of Duty Black Ops 4\project-bo4
 if not exist "%GAME%\mods\EnhancementModT8\bo3port" mkdir "%GAME%\mods\EnhancementModT8\bo3port"
-if not exist "%GAME%\plugins" mkdir "%GAME%\plugins"
 if not exist "%GAME%\zone" mkdir "%GAME%\zone"
 if not exist "%GAME%\zone_mods\EnhancementModT8_FF" mkdir "%GAME%\zone_mods\EnhancementModT8_FF"
 copy /Y "ShieldConfig\project-bo4\mods\EnhancementModT8\bo3port\*" "%GAME%\mods\EnhancementModT8\bo3port\" >nul
-copy /Y "ShieldConfig\project-bo4\plugins\bo3port.dll" "%GAME%\plugins\bo3port.dll" >nul
 copy /Y "ShieldConfig\project-bo4\zone\bo3port.ff" "%GAME%\zone\bo3port.ff" >nul
 copy /Y "ShieldConfig\project-bo4\fastfile\EnhancementModT8_FF\config.json" "%GAME%\zone_mods\EnhancementModT8_FF\config.json" >nul
 

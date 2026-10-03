@@ -10,7 +10,7 @@ detour zm_bgb_perkaholic<scripts\zm_common\bgbs\zm_bgb_perkaholic.gsc>::activati
     if (!self laststand::player_is_in_laststand() && self.sessionstate != "spectator") {
         self [[ @zm_perks<scripts\zm_common\zm_perks.gsc>::function_cc24f525 ]]();
         self thread [[ @zm_bgb_perkaholic<scripts\zm_common\bgbs\zm_bgb_perkaholic.gsc>::function_cd55a662 ]]();
-        for (i = 0; i < 32; i++) {
+        for (i = 0; i < 13; i++) {
             var_16c042b8 = self GetPerk();
             if (isdefined(var_16c042b8)) {
                 self.var_1eba264f = 1;

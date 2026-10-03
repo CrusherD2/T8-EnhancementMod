@@ -6,7 +6,7 @@
 - ### Client Needed to Run This Mod: [Shield Client Launcher](https://github.com/NotNierPea/shield-launcher)
 - ### To Load The Mod, Use Shield Client and Put The Mod in ``Call of Duty Black Ops 4\project-bo4`` (Extract The Mod First) or You can use the Mod Manager in the Client!
   #### (If its your first time installing the mod, you need to restart the game, otherwise click reload shield mods button in shield options)
-- ### Extract the full ``ShieldConfig/project-bo4`` tree into the game ``project-bo4`` folder (``mods``, ``plugins``, ``zone``, ``zone_mods``). Classic Mode perk machines ship with this mod; first-time install needs a game restart so Shield can load the hook.
+- ### Extract the full ``ShieldConfig/project-bo4`` tree into the game ``project-bo4`` folder (``mods``, ``zone``, ``zone_mods``). Classic Mode perk machine packs ship with this mod and are applied by the Shield client.
 - ### You can customize almost everything in the Enhancement Mod Settings menu.
 
 # How to Compile (Scripts):
@@ -17,10 +17,8 @@
 - #### For client gsc/csc detours: https://github.com/ate47/t7-compiler-custom
 - #### You can also use acts cod tools: https://github.com/ate47/atian-cod-tools (does not support shield client's detours!)
 
-# How to Compile (Perk Machines):
-- ### Visual Studio 2022 Build Tools (x64). Detours is already under ``plugin/deps/Detours``.
-- ### Run ``plugin/build.bat``. It writes the Shield hook DLL used by Classic Mode perk machines.
-- ### Machine packs live in ``ShieldConfig/project-bo4/mods/EnhancementModT8/bo3port``. Images are in ``zone/bo3port.ff``, hooked by the existing Enhancement fastfile config.
+# Perk Machines:
+- ### Machine packs live in ``ShieldConfig/project-bo4/mods/EnhancementModT8/bo3port``. The Shield client loads them. Images are in ``zone/bo3port.ff``, hooked by the existing Enhancement fastfile config.
 
 # How to Compile (Fast File):
 - ### Download the latest Enhancement Mod OR use the ``T8-EnhancementMod/ShieldConfig/project-bo4/mods/EnhancementModT8`` to copy it to bo4 directory: ``project-bo4`` or Use the ``ShieldConfig/project-bo4/fastfile/EnhancementModT8_FF`` and copy it to bo4 directory: ``project-bo4/zone_mods``.

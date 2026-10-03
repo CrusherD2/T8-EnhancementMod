@@ -14,6 +14,7 @@ ClassicMode()
 		thread ClassicMode_Setup();
 		callback::on_connect(&init_player_zombie_vars);
 		callback::on_spawned(&init_player_zombie_vars_spawn);
+		callback::on_spawned(&ApplyBo3PortFields);
 	}
 }
 

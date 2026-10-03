@@ -895,19 +895,30 @@ PlayPerkAnim(str_perk)
 }
 
 // Classic perks drink a BO4 perk's bottle/totem; while bo3port_drink holds the Classic perk's number the
-// bo3port plugin swaps that bottle's label (or the totem's icon) for the Classic perk's.
-// The plugin reads these on whichever machine is drawing. SetDvar alone stays on the host,
-// so the same value is sent to every client and applied there.
+// client swaps that bottle's label (or the totem's icon) for the Classic perk's.
+// Each player gets the field on themselves so every client applies the same value.
 SyncBo3PortPower(value)
 {
+    level.bo3port_power = value;
     SetDvar(#"bo3port_power", value);
-    level clientfield::set("bo3port_power", value);
+    foreach (player in level.players)
+        player clientfield::set_to_player("bo3port_power", value);
 }
 
 SyncBo3PortDrink(value)
 {
+    level.bo3port_drink = value;
     SetDvar(#"bo3port_drink", value);
-    level clientfield::set("bo3port_drink", value);
+    foreach (player in level.players)
+        player clientfield::set_to_player("bo3port_drink", value);
+}
+
+ApplyBo3PortFields()
+{
+    if (isdefined(level.bo3port_power))
+        self clientfield::set_to_player("bo3port_power", level.bo3port_power);
+    if (isdefined(level.bo3port_drink))
+        self clientfield::set_to_player("bo3port_drink", level.bo3port_drink);
 }
 
 PlayClassicPerkAnim(str_perk)

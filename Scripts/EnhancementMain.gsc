@@ -161,8 +161,8 @@ autoexec InitSystem()
 
     // have to register it anyways
     clientfield::register("toplayer", "" + #"shield_paused_hud", 1, 1, "int");
-    clientfield::register("world", "bo3port_power", 1, 1, "int");
-    clientfield::register("world", "bo3port_drink", 1, 3, "int");
+    clientfield::register("toplayer", "bo3port_power", 1, 1, "int");
+    clientfield::register("toplayer", "bo3port_drink", 1, 3, "int");
 
     /*
     if(!GetDvarInt(#"shield_enh_ZombiesMods", 0))
