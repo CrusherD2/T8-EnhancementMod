@@ -10,14 +10,39 @@ detour zm_bgb_perkaholic<scripts\zm_common\bgbs\zm_bgb_perkaholic.gsc>::activati
     if (!self laststand::player_is_in_laststand() && self.sessionstate != "spectator") {
         self [[ @zm_perks<scripts\zm_common\zm_perks.gsc>::function_cc24f525 ]]();
         self thread [[ @zm_bgb_perkaholic<scripts\zm_common\bgbs\zm_bgb_perkaholic.gsc>::function_cd55a662 ]]();
-        for (i = 0; i < 13; i++) {
+        for (i = 0; i < 32; i++) {
             var_16c042b8 = self GetPerk();
             if (isdefined(var_16c042b8)) {
                 self.var_1eba264f = 1;
                 continue;
             }
-            return;
+            break;
         }
+        if (GetDvarInt(#"shield_enh_ClassicMode", 0)) {
+            self GivePerkaholicClassicPerks();
+        }
+    }
+}
+
+GivePerkaholicClassicPerks()
+{
+    if (!isdefined(self.HasJugg) || !self.HasJugg) {
+        self GiveClassicPerk(#"HasJugg", self, true);
+    }
+    if (!self hasperk(#"specialty_doubletap2") && !self hasperk(#"specialty_rof")) {
+        self GiveClassicPerk(#"specialty_doubletap2", self, true);
+    }
+    if (!self hasperk(#"specialty_whoswho")) {
+        self GiveClassicPerk(#"specialty_whoswho", self, true);
+    }
+    if (!isdefined(self.HasElemental) || !self.HasElemental) {
+        self GiveClassicPerk(#"HasElemental", self, true);
+    }
+    if (!self hasperk(#"specialty_vultureaid")) {
+        self GiveClassicPerk(#"specialty_vultureaid", self, true);
+    }
+    if (!self hasperk(#"specialty_fastreload")) {
+        self GiveClassicPerk(#"specialty_fastreload", self, true);
     }
 }
 

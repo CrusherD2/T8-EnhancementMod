@@ -619,7 +619,7 @@ SetWonderfizzRewardModel(mdl_reward, hash_name)
 
     label = WonderfizzDrinkLabel(hash_name);
     level notify(#"bo3port_drink_clear");
-    SetDvar(#"bo3port_drink", label);
+    SyncBo3PortDrink(label);
 }
 
 RotateWonderfizzReward()
@@ -1025,7 +1025,7 @@ WaitTriggerWonderfizz()
             
             level.Wonderfizz_IsBeingUsed = undefined;
             
-            SetDvar(#"bo3port_drink", 0);
+            SyncBo3PortDrink(0);
             mdl_reward delete();
             continue;
         }
@@ -1094,7 +1094,7 @@ WaitTriggerWonderfizz()
                 
                 level.Wonderfizz_IsBeingUsed = undefined;
 
-                SetDvar(#"bo3port_drink", 0);
+                SyncBo3PortDrink(0);
                 mdl_reward delete();
                 timeout = true;
 
@@ -1120,7 +1120,7 @@ WaitTriggerWonderfizz()
 
             // play anim
             e_player PlayPerkAnim(random_perks_get);
-            SetDvar(#"bo3port_drink", 0);
+            SyncBo3PortDrink(0);
             mdl_reward delete();
 
             e_player waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");
@@ -1142,7 +1142,7 @@ WaitTriggerWonderfizz()
         }
         else if (use_classic_perk)
         {
-            SetDvar(#"bo3port_drink", 0);
+            SyncBo3PortDrink(0);
             mdl_reward delete();
             e_player GiveClassicPerk(random_perks_get, e_player);
         }

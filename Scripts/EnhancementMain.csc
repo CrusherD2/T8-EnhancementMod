@@ -30,11 +30,24 @@ Init()
 
     //ShieldLog("^1T8 Enhancement Mod Loaded! (CSC)");
 
+    clientfield::register("world", "bo3port_power", 1, 1, "int", &Bo3PortPower, 0, 0);
+    clientfield::register("world", "bo3port_drink", 1, 3, "int", &Bo3PortDrink, 0, 0);
+
     thread ShieldPublicPauseScript();
     thread HardcoreBossesScript();
     thread T8WeaponsDrops();
 
     // !! - later
+}
+
+Bo3PortPower(localclientnum, oldval, newval, bnewent, binitialsnap, fieldname, bwastimejump)
+{
+    SetDvar(#"bo3port_power", newval);
+}
+
+Bo3PortDrink(localclientnum, oldval, newval, bnewent, binitialsnap, fieldname, bwastimejump)
+{
+    SetDvar(#"bo3port_drink", newval);
 }
 
 PostInit() 

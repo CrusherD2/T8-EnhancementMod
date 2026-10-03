@@ -350,13 +350,21 @@ namespace swap {
                 }
             }
             for (PackLod* lod : pack.lods) {
-                bool ok{};
-                const models::LodTarget* lender = lod->active ? BorrowBuffer(lod, found, count, &ok) : nullptr;
-                lod->active &= ok;
-                for (PackLod* other : pack.lods) {
-                    if (lender && other->lod == (uint32_t)lender->lod) {
-                        other->active = false;
-                    }
+                // Only the full mesh is shown. The reduced LODs read as boxes from a distance.
+                if (lod->lod != TOP_STREAMED_LOD) {
+                    lod->active = false;
+                }
+            }
+            for (PackLod* lod : pack.lods) {
+                if (!lod->active || lod->block.size() <= lod->expectStreamSize) {
+                    continue;
+                }
+                bool borrowed = false;
+                BorrowBuffer(lod, found, count, &borrowed);
+                if (!borrowed) {
+                    Log("# swap: %s lod %u block 0x%zx exceeds stream 0x%x, left alone\n", pack.file.c_str(),
+                        lod->lod, lod->block.size(), lod->expectStreamSize);
+                    lod->active = false;
                 }
             }
             ExtendReach(pack);

@@ -896,6 +896,20 @@ PlayPerkAnim(str_perk)
 
 // Classic perks drink a BO4 perk's bottle/totem; while bo3port_drink holds the Classic perk's number the
 // bo3port plugin swaps that bottle's label (or the totem's icon) for the Classic perk's.
+// The plugin reads these on whichever machine is drawing. SetDvar alone stays on the host,
+// so the same value is sent to every client and applied there.
+SyncBo3PortPower(value)
+{
+    SetDvar(#"bo3port_power", value);
+    level clientfield::set("bo3port_power", value);
+}
+
+SyncBo3PortDrink(value)
+{
+    SetDvar(#"bo3port_drink", value);
+    level clientfield::set("bo3port_drink", value);
+}
+
 PlayClassicPerkAnim(str_perk)
 {
     switch (str_perk)
@@ -909,7 +923,7 @@ PlayClassicPerkAnim(str_perk)
         default: label = 0; break;
     }
 
-    SetDvar(#"bo3port_drink", label);
+    SyncBo3PortDrink(label);
     self PlayPerkAnim(str_perk);
     level thread ClearClassicPerkLabel();
 }
@@ -920,7 +934,7 @@ ClearClassicPerkLabel()
     level endon(#"bo3port_drink_clear");
 
     wait 3;
-    SetDvar(#"bo3port_drink", 0);
+    SyncBo3PortDrink(0);
 }
 
 WaitTillClassicPower()
@@ -965,9 +979,9 @@ ClassicPerkSteamFx(perk_type)
 
 ClassicPerkPowerVisuals()
 {
-    SetDvar(#"bo3port_power", 0);
+    SyncBo3PortPower(0);
     WaitTillClassicPower();
-    SetDvar(#"bo3port_power", 1);
+    SyncBo3PortPower(1);
 
     if (!isdefined(level.CustomClassicPerks))
         return;
