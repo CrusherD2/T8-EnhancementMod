@@ -615,7 +615,7 @@ SetWonderfizzRewardModel(mdl_reward, hash_name)
     if (BO4ChaosMap())
         mdl_reward SetScale(1.15);
     else
-        mdl_reward SetScale(3.2);
+        mdl_reward SetScale(2);
 
     label = WonderfizzDrinkLabel(hash_name);
     level notify(#"bo3port_drink_clear");
@@ -967,7 +967,7 @@ WaitTriggerWonderfizz()
         else
         {
             mdl_reward = util::spawn_model(#"wpn_t8_zm_perk_bottle_bandolier_world", spawn_pos, self.angles);
-            mdl_reward SetScale(3.2);
+            mdl_reward SetScale(2);
         }
         mdl_reward clientfield::set("powerup_fx", 2);
 

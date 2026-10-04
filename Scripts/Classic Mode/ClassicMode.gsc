@@ -28,10 +28,46 @@ ClassicMode_Setup()
 	thread ClassicMode_PerksSystem_WeaponsSystem();
 	thread ClassicMode_CustomPerks();
 	thread Vulture_AddObjectives();
+	// 0 is normal Pack-a-Punch. 1 is Black Ops 1: one damage pack and no ammo type.
+	// 2 is Black Ops 3: one damage pack, and later packs only roll an ammo type.
+	pap_mode = GetDvarInt(#"shield_enh_ClassicMode_ClassicPaP", 0);
+	if (pap_mode == 1 || pap_mode == 2)
+		callback::function_aebeafc0(&ClassicPackAPunch);
+	if (pap_mode == 1)
+		callback::function_aebeafc0(&ClassicPackNoAat);
+	else if (GetDvarInt(#"shield_enh_ClassicMode_Bo3Aat", 1))
+		callback::function_aebeafc0(&AssignBo3Aat);
 
 	callback::on_ai_killed(&on_ai_kill_vulture);
+	callback::on_ai_killed(&Bo3TurnedKilled);
 
 	//thread PrintTesting();
+}
+
+// BO4 stores extra damage packs on the weapon. 0 is the first pack. Each later pack
+// raises it, up to 4, and those are the 25% boosts. Classic pack-a-punch keeps the
+// first boost and still lets the machine roll a new ammo type.
+ClassicPackAPunch(upgraded_weapon)
+{
+	if (!isdefined(upgraded_weapon))
+		return;
+
+	key = zm_weapons::function_93cd8e76(upgraded_weapon);
+	if (!isdefined(self.var_2843d3cc) || !isdefined(self.var_2843d3cc[key]))
+		return;
+
+	if (self.var_2843d3cc[key] > 0)
+		self.var_2843d3cc[key] = 0;
+}
+
+ClassicPackNoAat(upgraded_weapon)
+{
+	self endon(#"death");
+	if (!isdefined(upgraded_weapon))
+		return;
+	wait 0.2;
+	self aat::remove(upgraded_weapon);
+	self clientfield::set_to_player("aat_current", 0);
 }
 
 init_player_zombie_vars()

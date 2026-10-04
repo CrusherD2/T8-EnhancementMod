@@ -1562,6 +1562,66 @@
         },
         {
             "type": "localizeentry",
+            "name": "shield/classic_pap",
+            "value": "Classic Pack-a-Punch"
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/classic_pap_desc",
+            "value": "Off is normal Pack-a-Punch. Black Ops 1 packs once and adds no ammo type. Black Ops 3 packs once, and packing again only changes the ammo type."
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/pap_off",
+            "value": "Off"
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/pap_bo1",
+            "value": "Black Ops 1"
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/pap_bo3",
+            "value": "Black Ops 3"
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/bo3_aats",
+            "value": "Black Ops 3 AATs"
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/bo3_aats_desc",
+            "value": "Packed weapons roll Dead Wire, Blast Furnace, Turned, Fire Works, or Thunder Wall."
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/aat_dead_wire",
+            "value": "Dead Wire"
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/aat_blast_furnace",
+            "value": "Blast Furnace"
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/aat_turned",
+            "value": "Turned"
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/aat_fire_works",
+            "value": "Fire Works"
+        },
+        {
+            "type": "localizeentry",
+            "name": "shield/aat_thunder_wall",
+            "value": "Thunder Wall"
+        },
+        {
+            "type": "localizeentry",
             "name": "shield/classic_loadouts",
             "value": "Classic Loadouts"
         },
@@ -1969,6 +2029,13 @@
         {
             "type": "eventstring",
             "name": "notify_vulture_image",
+            "mode": [
+                "zm"
+            ]
+        },
+        {
+            "type": "eventstring",
+            "name": "notify_bo3_aat_hit",
             "mode": [
                 "zm"
             ]

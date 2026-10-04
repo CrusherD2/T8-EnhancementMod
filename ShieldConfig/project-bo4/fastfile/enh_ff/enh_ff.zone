@@ -62,6 +62,12 @@ image,rampage_inducer_round.png
 image,directed_icon.png
 image,directed_image.png
 image,eye_prot.png
+image,fireworks_classic.png
+image,t7_hud_zm_aat_deadwire.png
+image,t7_hud_zm_aat_blastfurnace.png
+image,t7_hud_zm_aat_turned.png
+image,t7_hud_zm_aat_thunderwall.png
+image,t7_hud_zm_aat_fireworks.png
 
 // fonts
 ttf,fonts/shield_mom.otf

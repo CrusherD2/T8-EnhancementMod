@@ -356,14 +356,16 @@ detour aat<scripts\core_common\aat_shared.gsc>::aat_response(death, inflictor, a
     if (!isplayer(attacker) || !isdefined(attacker.aat) || !isdefined(weapon)) {
         return;
     }
-    if (mod != "MOD_PISTOL_BULLET" && mod != "MOD_RIFLE_BULLET" && mod != "MOD_GRENADE" && mod != "MOD_PROJECTILE" && mod != "MOD_EXPLOSIVE" && mod != "MOD_IMPACT" && (mod != "MOD_MELEE" || !(isdefined(level.var_9d1d502c) && level.var_9d1d502c))) {
+    bullet = mod == "MOD_PISTOL_BULLET" || mod == "MOD_RIFLE_BULLET" || mod == "MOD_GRENADE" || mod == "MOD_PROJECTILE" || mod == "MOD_EXPLOSIVE" || mod == "MOD_IMPACT" || mod == #"mod_pistol_bullet" || mod == #"mod_rifle_bullet" || mod == #"mod_grenade" || mod == #"mod_projectile" || mod == #"mod_explosive" || mod == #"mod_impact";
+    melee = (mod == "MOD_MELEE" || mod == #"mod_melee") && isdefined(level.var_9d1d502c) && level.var_9d1d502c;
+    if (!bullet && !melee) {
         return;
     }
 
     // our logic
     if (isDefined(attacker.HasElemental) && attacker.HasElemental)
     {
-        if (math::cointoss(2))
+        if (GetDvarInt(#"shield_enh_LocalTest", 0) || math::cointoss(2))
         {
             // random AAT name from the level.aat array
             keys = getarraykeys(level.aat);
@@ -376,7 +378,13 @@ detour aat<scripts\core_common\aat_shared.gsc>::aat_response(death, inflictor, a
                 return;
             }
             
-            if (isDefined(level.aat[name_random]) && isDefined(level.aat[name_random].result_func))
+            if (GetDvarInt(#"shield_enh_ClassicMode_Bo3Aat", 0))
+            {
+                pick = array::random(Bo3AatTypes());
+                self thread Bo3AatEffect(attacker, pick);
+                Bo3AatHitNotify(attacker, pick);
+            }
+            else if (isDefined(level.aat[name_random]) && isDefined(level.aat[name_random].result_func))
             {
                 // ignore bosses and stuff
                 if (isdefined(level.aat[name_random].immune_trigger[self.archetype]) && level.aat[name_random].immune_trigger[self.archetype]) {
@@ -384,7 +392,7 @@ detour aat<scripts\core_common\aat_shared.gsc>::aat_response(death, inflictor, a
                 }
             
                 self thread [[ level.aat[name_random].result_func ]](death, attacker, mod, weapon);
-                attacker playlocalsound(level.aat[name_random].damage_feedback_sound);
+                attacker thread damagefeedback::update_override(level.aat[name_random].damage_feedback_icon, level.aat[name_random].damage_feedback_sound, undefined);
             }
         }
     }
@@ -393,10 +401,18 @@ detour aat<scripts\core_common\aat_shared.gsc>::aat_response(death, inflictor, a
     if (!isdefined(name)) {
         return;
     }
-    if (isdefined(death) && death && !level.aat[name].occurs_on_death) {
+    // Real chances stay on the register calls below. shield_enh_LocalTest forces every shot.
+    // Dead Wire 20%, attacker 5s, global 2s. Blast Furnace 15%, attacker 15s.
+    // Turned 15%, attacker 15s, global 8s, skipped on a killing blow.
+    // Fire Works 10%, attacker 20s, global 10s. Thunder Wall 25%, attacker 10s.
+    always = GetDvarInt(#"shield_enh_LocalTest", 0);
+    if (isdefined(death) && death && !level.aat[name].occurs_on_death && !always) {
         return;
     }
     if (!isdefined(self.archetype)) {
+        if (name != "zm_aat_dead_wire" && name != "zm_aat_blast_furnace" && name != "zm_aat_turned" && name != "zm_aat_fire_works" && name != "zm_aat_thunder_wall")
+            return;
+    } else if (isdefined(level.aat[name].immune_trigger) && isdefined(level.aat[name].immune_trigger[self.archetype]) && level.aat[name].immune_trigger[self.archetype]) {
         return;
     }
     if (isdefined(self.var_dd6fe31f) && self.var_dd6fe31f) {
@@ -408,18 +424,18 @@ detour aat<scripts\core_common\aat_shared.gsc>::aat_response(death, inflictor, a
     if (isdefined(self.aat_turned) && self.aat_turned) {
         return;
     }
-    if (isdefined(level.aat[name].immune_trigger[self.archetype]) && level.aat[name].immune_trigger[self.archetype]) {
-        return;
-    }
     now = float(gettime()) / 1000;
-    if (isdefined(self.aat_cooldown_start) && now <= self.aat_cooldown_start[name] + level.aat[name].cooldown_time_entity) {
-        return;
-    }
-    if (now <= attacker.aat_cooldown_start[name] + level.aat[name].cooldown_time_attacker) {
-        return;
-    }
-    if (now <= level.aat[name].cooldown_time_global_start + level.aat[name].cooldown_time_global) {
-        return;
+    if (!always)
+    {
+        if (isdefined(self.aat_cooldown_start) && now <= self.aat_cooldown_start[name] + level.aat[name].cooldown_time_entity) {
+            return;
+        }
+        if (now <= attacker.aat_cooldown_start[name] + level.aat[name].cooldown_time_attacker) {
+            return;
+        }
+        if (now <= level.aat[name].cooldown_time_global_start + level.aat[name].cooldown_time_global) {
+            return;
+        }
     }
     if (isdefined(level.aat[name].validation_func)) {
         if (![[ level.aat[name].validation_func ]]()) {
@@ -429,8 +445,10 @@ detour aat<scripts\core_common\aat_shared.gsc>::aat_response(death, inflictor, a
     success = 0;
     reroll_icon = undefined;
     percentage = level.aat[name].percentage;
+    if (always)
+        percentage = 1;
 
-    if (isdefined(level.var_bdba6ee8[weapon])) {
+    if (!always && isdefined(level.var_bdba6ee8[weapon])) {
         if (level.var_bdba6ee8[weapon] < percentage) {
             percentage = level.var_bdba6ee8[weapon];
         }
@@ -464,7 +482,9 @@ detour aat<scripts\core_common\aat_shared.gsc>::aat_response(death, inflictor, a
     attacker.aat_cooldown_start[name] = now;
     self thread [[ level.aat[name].result_func ]](death, attacker, mod, weapon);
     if (isplayer(attacker)) {
-        attacker playlocalsound(level.aat[name].damage_feedback_sound);
+        Bo3AatHitNotify(attacker, name);
+        if (isdefined(level.aat[name].damage_feedback_sound))
+            attacker playlocalsound(level.aat[name].damage_feedback_sound);
     }
 }
 
@@ -482,6 +502,9 @@ detour zm_player<scripts\zm_common\zm_player.gsc>::player_damage_override(einfli
         }
     }
     if (isdefined(eattacker) && isdefined(eattacker.b_aat_fire_works_weapon) && eattacker.b_aat_fire_works_weapon) {
+        return 0;
+    }
+    if (isdefined(eattacker) && isdefined(eattacker.aat_turned) && eattacker.aat_turned) {
         return 0;
     }
     if (isdefined(self.use_adjusted_grenade_damage) && self.use_adjusted_grenade_damage) {
@@ -1291,4 +1314,517 @@ detour zm_hero_weapon<scripts\zm_common\zm_hero_weapon.gsc>::function_9a100883(w
     #/
     self zm_stats::increment_challenge_stat(#"special_weapon_levels");
     self.var_39b77a76 = undefined;
+}
+
+Bo3AatTypes()
+{
+    // These are the four HUD slots the game already has, plus Fire Works. Renaming the slots keeps the
+    // icon index in sync. Kill-O-Watt is Dead Wire, Fire Bomb is Blast Furnace, Brain Rot is Turned,
+    // Cryofreeze is Thunder Wall.
+    return array("zm_aat_kill_o_watt", "zm_aat_plasmatic_burst", "zm_aat_brain_decay", "zm_aat_fire_works", "zm_aat_frostbite");
+}
+
+Bo3AatServerInit()
+{
+    if (!(isdefined(level.aat_in_use) && level.aat_in_use))
+        return;
+
+    if (isdefined(level.aat_initializing) && level.aat_initializing)
+        aat::register("zm_aat_fire_works", 0.1, 0, 20, 10, 1, &Bo3FireWorksResult, "t7_hud_zm_aat_fireworks", "wpn_aat_blast_furnace_plr", undefined, 1);
+    callback::on_finalize_initialization(&Bo3AatOverrideStock);
+}
+
+Bo3AatOverrideStock()
+{
+    if (!isdefined(level.aat) || !isdefined(level.aat["zm_aat_kill_o_watt"]))
+        return;
+
+    level.aat["zm_aat_kill_o_watt"].result_func = &Bo3DeadWireResult;
+    level.aat["zm_aat_kill_o_watt"].percentage = 0.2;
+    level.aat["zm_aat_kill_o_watt"].cooldown_time_entity = 0;
+    level.aat["zm_aat_kill_o_watt"].cooldown_time_attacker = 5;
+    level.aat["zm_aat_kill_o_watt"].cooldown_time_global = 2;
+    level.aat["zm_aat_kill_o_watt"].occurs_on_death = 1;
+    level.aat["zm_aat_kill_o_watt"].damage_feedback_sound = "wpn_aat_dead_wire_plr";
+    level.aat["zm_aat_kill_o_watt"].damage_feedback_icon = "t7_hud_zm_aat_deadwire";
+
+    level.aat["zm_aat_plasmatic_burst"].result_func = &Bo3FurnaceResult;
+    level.aat["zm_aat_plasmatic_burst"].percentage = 0.15;
+    level.aat["zm_aat_plasmatic_burst"].cooldown_time_entity = 0;
+    level.aat["zm_aat_plasmatic_burst"].cooldown_time_attacker = 15;
+    level.aat["zm_aat_plasmatic_burst"].cooldown_time_global = 0;
+    level.aat["zm_aat_plasmatic_burst"].occurs_on_death = 1;
+    level.aat["zm_aat_plasmatic_burst"].damage_feedback_sound = "wpn_aat_blast_furnace_plr";
+    level.aat["zm_aat_plasmatic_burst"].damage_feedback_icon = "t7_hud_zm_aat_blastfurnace";
+
+    level.aat["zm_aat_brain_decay"].result_func = &Bo3TurnedResult;
+    level.aat["zm_aat_brain_decay"].percentage = 0.15;
+    level.aat["zm_aat_brain_decay"].cooldown_time_entity = 0;
+    level.aat["zm_aat_brain_decay"].cooldown_time_attacker = 15;
+    level.aat["zm_aat_brain_decay"].cooldown_time_global = 8;
+    level.aat["zm_aat_brain_decay"].occurs_on_death = 0;
+    level.aat["zm_aat_brain_decay"].damage_feedback_sound = "wpn_aat_turned_plr";
+    level.aat["zm_aat_brain_decay"].damage_feedback_icon = "t7_hud_zm_aat_turned";
+
+    level.aat["zm_aat_frostbite"].result_func = &Bo3ThunderResult;
+    level.aat["zm_aat_frostbite"].percentage = 0.25;
+    level.aat["zm_aat_frostbite"].cooldown_time_entity = 0;
+    level.aat["zm_aat_frostbite"].cooldown_time_attacker = 10;
+    level.aat["zm_aat_frostbite"].cooldown_time_global = 0;
+    level.aat["zm_aat_frostbite"].occurs_on_death = 1;
+    level.aat["zm_aat_frostbite"].damage_feedback_sound = "wpn_aat_thunder_wall_plr";
+    level.aat["zm_aat_frostbite"].damage_feedback_icon = "t7_hud_zm_aat_thunderwall";
+
+    // Same numbers the client uses for the weapon label.
+    level.aat["zm_aat_kill_o_watt"].clientfield_index = 1;
+    level.aat["zm_aat_plasmatic_burst"].clientfield_index = 2;
+    level.aat["zm_aat_brain_decay"].clientfield_index = 3;
+    level.aat["zm_aat_frostbite"].clientfield_index = 4;
+    if (isdefined(level.aat["zm_aat_fire_works"]))
+    {
+        level.aat["zm_aat_fire_works"].clientfield_index = 5;
+        level.aat["zm_aat_fire_works"].damage_feedback_icon = "t7_hud_zm_aat_fireworks";
+    }
+}
+
+Bo3DeadWireResult(death, attacker, mod, weapon)
+{
+    self thread Bo3AatEffect(attacker, "zm_aat_dead_wire");
+}
+
+Bo3FurnaceResult(death, attacker, mod, weapon)
+{
+    self thread Bo3AatEffect(attacker, "zm_aat_blast_furnace");
+}
+
+Bo3TurnedResult(death, attacker, mod, weapon)
+{
+    self thread Bo3AatEffect(attacker, "zm_aat_turned");
+}
+
+Bo3FireWorksResult(death, attacker, mod, weapon)
+{
+    self thread Bo3AatEffect(attacker, "zm_aat_fire_works");
+}
+
+Bo3ThunderResult(death, attacker, mod, weapon)
+{
+    self thread Bo3AatEffect(attacker, "zm_aat_thunder_wall");
+}
+
+Bo3AatLabel(type)
+{
+    switch (type)
+    {
+        case "dead_wire":
+        case "zm_aat_dead_wire":
+        case "zm_aat_kill_o_watt": return "^5Dead Wire";
+        case "blast_furnace":
+        case "zm_aat_blast_furnace":
+        case "zm_aat_plasmatic_burst": return "^1Blast Furnace";
+        case "turned":
+        case "zm_aat_turned":
+        case "zm_aat_brain_decay": return "^2Turned";
+        case "fire_works":
+        case "zm_aat_fire_works": return "^3Fire Works";
+        case "thunder_wall":
+        case "zm_aat_thunder_wall":
+        case "zm_aat_frostbite": return "^4Thunder Wall";
+    }
+    return "";
+}
+
+AssignBo3Aat(upgraded_weapon)
+{
+    self endon(#"death");
+    weapon = upgraded_weapon;
+    if (!isdefined(weapon))
+        return;
+    wait 0.2;
+    if (!isdefined(level.aat["zm_aat_kill_o_watt"]))
+        return;
+
+    types = Bo3AatTypes();
+    current = self.bo3_last_aat;
+    pool = [];
+    foreach (name in types)
+    {
+        if (isdefined(current) && name == current)
+            continue;
+        pool[pool.size] = name;
+    }
+    if (pool.size == 0)
+        pool = types;
+    pick = pool[randomint(pool.size)];
+    self.bo3_last_aat = pick;
+    self aat::acquire(weapon, pick);
+    self thread Bo3AatShow(weapon, pick);
+    self iprintln(Bo3AatLabel(pick));
+}
+
+Bo3AatShow(weapon, pick)
+{
+    self endon(#"death");
+    if (!isdefined(level.aat[pick]) || !isdefined(level.aat[pick].clientfield_index))
+        return;
+    index = level.aat[pick].clientfield_index;
+    packed = aat::function_702fb333(weapon);
+    for (i = 0; i < 8; i++)
+    {
+        if (!isdefined(self))
+            return;
+        held = self getcurrentweapon();
+        if (isdefined(held) && aat::function_702fb333(held) == packed)
+            self clientfield::set_to_player("aat_current", index);
+        wait 0.25;
+    }
+}
+
+Bo3AatHitNotify(attacker, name)
+{
+    if (!isplayer(attacker))
+        return;
+    id = 0;
+    if (name == "zm_aat_kill_o_watt" || name == "zm_aat_dead_wire")
+        id = 1;
+    else if (name == "zm_aat_plasmatic_burst" || name == "zm_aat_blast_furnace")
+        id = 2;
+    else if (name == "zm_aat_brain_decay" || name == "zm_aat_turned")
+        id = 3;
+    else if (name == "zm_aat_frostbite" || name == "zm_aat_thunder_wall")
+        id = 4;
+    else if (name == "zm_aat_fire_works")
+        id = 5;
+    if (id == 0)
+        return;
+    attacker LUINotifyEvent(#"notify_bo3_aat_hit", 1, id);
+}
+
+Bo3AatMarker(type)
+{
+    icon = "t7_hud_zm_aat_deadwire";
+    sound = "wpn_aat_dead_wire_plr";
+    switch (type)
+    {
+        case "blast_furnace":
+            icon = "t7_hud_zm_aat_blastfurnace";
+            sound = "wpn_aat_blast_furnace_plr";
+            break;
+        case "turned":
+            icon = "t7_hud_zm_aat_turned";
+            sound = "wpn_aat_turned_plr";
+            break;
+        case "thunder_wall":
+            icon = "t7_hud_zm_aat_thunderwall";
+            sound = "wpn_aat_thunder_wall_plr";
+            break;
+        case "fire_works":
+            icon = "t7_hud_zm_aat_fireworks";
+            sound = "wpn_aat_fire_works_plr";
+            break;
+    }
+    self thread damagefeedback::update_override(icon, sound, undefined);
+}
+
+Bo3AatIsNormal(zombie)
+{
+    if (!isdefined(zombie) || !isalive(zombie))
+        return false;
+    if (isplayer(zombie))
+        return false;
+    if (isdefined(zombie.aat_turned) && zombie.aat_turned)
+        return false;
+    if (isdefined(zombie.archetype) && isdefined(level.aat[#"zm_aat_kill_o_watt"]) && isdefined(level.aat[#"zm_aat_kill_o_watt"].immune_trigger) && isdefined(level.aat[#"zm_aat_kill_o_watt"].immune_trigger[zombie.archetype]) && level.aat[#"zm_aat_kill_o_watt"].immune_trigger[zombie.archetype])
+        return false;
+    return true;
+}
+
+Bo3AatNearby(origin, range)
+{
+    found = [];
+    team = level.zombie_team;
+    if (!isdefined(team))
+        team = #"axis";
+    zombies = getaiteamarray(team);
+    if (!isdefined(zombies))
+        return found;
+
+    range_sq = range * range;
+    foreach (zombie in zombies)
+    {
+        if (!Bo3AatIsNormal(zombie))
+            continue;
+        if (distancesquared(origin, zombie.origin) > range_sq)
+            continue;
+        found[found.size] = zombie;
+    }
+    return found;
+}
+
+Bo3AatCanGib(zombie)
+{
+    if (!isdefined(zombie) || !isalive(zombie) || !isactor(zombie))
+        return false;
+    if (isdefined(zombie.no_gib) && zombie.no_gib)
+        return false;
+    if (isdefined(zombie.can_gib) && !zombie.can_gib)
+        return false;
+    if (!isdefined(zombie.gibdef))
+        return false;
+    if (isdefined(zombie.archetype))
+    {
+        kind = zombie.archetype;
+        if (kind == #"catalyst" || kind == #"tiger" || kind == #"zombie_dog" || kind == #"brutus" || kind == #"blightfather" || kind == #"gegenees" || kind == #"elephant")
+            return false;
+    }
+    return true;
+}
+
+Bo3AatGib(zombie, attacker)
+{
+    if (!isalive(zombie))
+        return;
+    if (Bo3AatCanGib(zombie))
+    {
+        gibserverutils::gibhead(zombie);
+        if (math::cointoss())
+            gibserverutils::gibleftarm(zombie);
+        else
+            gibserverutils::gibrightarm(zombie);
+        gibserverutils::giblegs(zombie);
+    }
+    if (isalive(zombie))
+        zombie dodamage(zombie.health + 666, zombie.origin, attacker);
+}
+
+Bo3FurnaceBurn(attacker, weapon)
+{
+    self endon(#"death");
+    self clientfield::set("bo3_aat_furnace_burn", 1);
+    self playloopsound(#"chr_burn_npc_loop1", 0.5);
+    tick = int(self.health / 6);
+    if (tick < 1)
+        tick = 1;
+    for (i = 0; i <= 6; i++)
+    {
+        if (!isalive(self))
+            return;
+        self dodamage(tick, self.origin, attacker, undefined, "none", "MOD_UNKNOWN", 0, weapon);
+        wait 0.5;
+    }
+    if (isalive(self))
+    {
+        self stoploopsound(0.5);
+        self clientfield::set("bo3_aat_furnace_burn", 0);
+    }
+}
+
+Bo3TurnedKilled(params)
+{
+    if (!isdefined(params) || !isdefined(params.eattacker))
+        return;
+    killer = params.eattacker;
+    if (isdefined(killer.aat_turned) && killer.aat_turned && isdefined(killer.n_aat_turned_zombie_kills))
+        killer.n_aat_turned_zombie_kills++;
+}
+
+Bo3AatFlingFrom(zombie, attacker, from, scale, thunder)
+{
+    if (!isalive(zombie))
+        return;
+    spot = zombie.origin;
+    if (isdefined(zombie getcentroid()))
+        spot = zombie getcentroid();
+    zombie dodamage(zombie.health + 666, spot, attacker, attacker, "none", "MOD_AAT");
+    if (isalive(zombie))
+        zombie zombie_utility::setup_zombie_knockdown(from);
+    if (isdefined(thunder) && thunder && isdefined(zombie))
+        zombie thread Bo3AatThunderFx();
+}
+
+Bo3AatThunderFx()
+{
+    self clientfield::increment("bo3_aat_thunder", 1);
+}
+
+Bo3AatEffect(attacker, type)
+{
+    if (type == "dead_wire" || type == "zm_aat_dead_wire" || type == "zm_aat_kill_o_watt")
+    {
+        self clientfield::set("zm_aat_kill_o_watt_zap", 1);
+        self clientfield::increment("zm_aat_kill_o_watt_explosion", 1);
+        playsoundatposition(#"zmb_aat_kilowatt_explode", self.origin);
+        params = lightning_chain::create_lightning_chain_params(8, 9, 120);
+        params.head_gib_chance = 100;
+        params.network_death_choke = 4;
+        params.weapon = attacker getcurrentweapon();
+        attacker.tesla_enemies = undefined;
+        attacker.tesla_enemies_hit = 1;
+        attacker.tesla_arc_count = 0;
+        self lightning_chain::arc_damage(self, attacker, 1, params);
+        return;
+    }
+
+    if (type == "blast_furnace" || type == "zm_aat_blast_furnace" || type == "zm_aat_plasmatic_burst")
+    {
+        weapon = attacker getcurrentweapon();
+        playsoundatposition(#"wpn_aat_blast_furnace_plr", self.origin);
+        self clientfield::increment("bo3_aat_furnace_blast", 1);
+        self clientfield::set("bo3_aat_furnace_burn", 1);
+        zombies = array::get_all_closest(self.origin, getaiteamarray(#"axis"), undefined, undefined, 120);
+        burning = [];
+        if (isdefined(zombies))
+        {
+            foreach (zombie in zombies)
+            {
+                if (!isalive(zombie) || zombie == self)
+                    continue;
+                zombie clientfield::set("bo3_aat_furnace_burn", 1);
+                burning[burning.size] = zombie;
+            }
+        }
+        waitframe(1);
+        self thread Bo3AatGib(self, attacker);
+        wait 0.25;
+        foreach (zombie in burning)
+        {
+            if (isalive(zombie))
+                zombie thread Bo3FurnaceBurn(attacker, weapon);
+        }
+        return;
+    }
+
+    if (type == "fire_works" || type == "zm_aat_fire_works")
+    {
+        player = attacker;
+        weapon = player getcurrentweapon();
+        home = self.origin;
+        Bo3AatGib(self, player);
+        rise = home + (0, 0, 56);
+        gun = zm_utility::spawn_weapon_model(weapon, undefined, home, (0, player.angles[1], 0), player GetWeaponOptions(weapon));
+        if (!isdefined(gun))
+            return;
+        gun.owner = player;
+        gun.b_aat_fire_works_weapon = 1;
+        gun moveto(rise, 0.5);
+        gun waittill(#"movedone");
+        for (i = 0; i < 10; i++)
+        {
+            target = undefined;
+            checks = 0;
+            foreach (zombie in array::randomize(getaiteamarray(#"axis")))
+            {
+                if (!isalive(zombie))
+                    continue;
+                if (distancesquared(gun.origin, zombie getcentroid()) > 360000)
+                    continue;
+                if (checks < 3 && !zombie damageconetrace(gun.origin))
+                {
+                    checks++;
+                    continue;
+                }
+                target = zombie;
+                break;
+            }
+            aim = gun.origin + anglestoforward((0, randomint(360), 0)) * 40;
+            if (isdefined(target))
+                aim = target getcentroid();
+            gun.angles = vectortoangles(aim - gun.origin);
+            flash = gun gettagorigin("tag_flash");
+            if (!isdefined(flash))
+                flash = gun.origin;
+            magicbullet(weapon, flash, aim, gun);
+            if (isdefined(weapon.firesoundplayer))
+                player playlocalsound(weapon.firesoundplayer);
+            if (isdefined(weapon.firesound))
+                playsoundatposition(weapon.firesound, flash);
+            if (isalive(target))
+                Bo3AatGib(target, player);
+            util::wait_network_frame();
+        }
+        gun moveto(home, 0.5);
+        gun waittill(#"movedone");
+        util::wait_network_frame();
+        gun delete();
+        return;
+    }
+
+    if (type == "thunder_wall" || type == "zm_aat_thunder_wall" || type == "zm_aat_frostbite")
+    {
+        blast = self.origin;
+        facing = anglestoforward(attacker getplayerangles());
+        end_pos = blast + vectorscale(facing, 180);
+        playsoundatposition(#"wpn_aat_thunder_wall_plr", blast);
+        playsoundatposition(#"evt_nuke_flash", blast);
+        zombies = array::get_all_closest(blast, getaiteamarray(#"axis"), undefined, undefined, 360);
+        if (!isdefined(zombies))
+            return;
+        flung = 0;
+        foreach (zombie in zombies)
+        {
+            if (!isalive(zombie))
+                continue;
+            spot = zombie.origin;
+            dist_sq = 0;
+            if (zombie != self)
+            {
+                spot = zombie getcentroid();
+                dist_sq = distancesquared(blast, spot);
+                if (vectordot(facing, vectornormalize(spot - blast)) < 0)
+                    continue;
+                nearest = pointonsegmentnearesttopoint(blast, end_pos, spot);
+                if (distancesquared(spot, nearest) > (540 * 540))
+                    continue;
+            }
+            if (dist_sq < (180 * 180))
+            {
+                Bo3AatFlingFrom(zombie, attacker, blast, 100, 1);
+                flung++;
+            }
+            if (flung >= 6)
+                break;
+        }
+        return;
+    }
+
+    if (type == "turned" || type == "zm_aat_turned" || type == "zm_aat_brain_decay")
+    {
+        self.aat_turned = 1;
+        self.n_aat_turned_zombie_kills = 0;
+        playsoundatposition(#"wpn_aat_turned_plr", self.origin);
+        self.allowdeath = 0;
+        self.allowpain = 0;
+        self.no_gib = 1;
+        self.team = #"allies";
+        self clientfield::set("zm_aat_brain_decay", 1);
+        self zombie_utility::set_zombie_run_cycle("sprint");
+        self thread Bo3TurnedBlast(attacker);
+        self endon(#"death");
+        end_time = gettime() + 20000;
+        while (gettime() < end_time && self.n_aat_turned_zombie_kills < 12)
+            wait 0.05;
+        wait 0.5;
+        self.allowdeath = 1;
+        self clientfield::set("zm_aat_brain_decay", 0);
+        Bo3AatGib(self, attacker);
+    }
+}
+
+Bo3TurnedBlast(attacker)
+{
+    zombies = array::get_all_closest(self.origin, getaiteamarray(#"axis"), undefined, undefined, 90);
+    if (!isdefined(zombies))
+        return;
+    flung = 0;
+    foreach (zombie in zombies)
+    {
+        if (!isalive(zombie) || zombie == self)
+            continue;
+        if (distancesquared(self.origin, zombie getcentroid()) > (90 * 90))
+            continue;
+        Bo3AatFlingFrom(zombie, attacker, self.origin, 60);
+        flung++;
+        if (flung >= 3)
+            break;
+    }
 }

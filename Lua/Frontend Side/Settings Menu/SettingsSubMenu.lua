@@ -227,7 +227,9 @@ LUI.createMenu.Shield_EnhID_SettingsPopup = function ( f1_arg0, f1_arg1 )
 	if Dvar[@"shield_enh_datasource_get"]:get() == "ShieldClassicSettings" then
 		self.SettingsListRelatedDesc:setAlpha(1)
 		self.SettingsListRelatedDesc:setText("Related Classic Mode Settings")
+		self.SettingsListRelatedDesc:setTopBottom( 0.5, 0.5, 50, 75 )
 		self.SettingsListRelated:setAlpha(1)
+		self.SettingsListRelated:setTopBottom( 0.5, 0.5, -310, 490 )
 		self.SettingsListRelated.SettingsList:setDataSource("ShieldClassicSettingsRelated")
 	end
 
