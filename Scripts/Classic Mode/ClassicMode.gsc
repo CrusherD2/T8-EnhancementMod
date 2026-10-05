@@ -44,9 +44,7 @@ ClassicMode_Setup()
 	//thread PrintTesting();
 }
 
-// BO4 stores extra damage packs on the weapon. 0 is the first pack. Each later pack
-// raises it, up to 4, and those are the 25% boosts. Classic pack-a-punch keeps the
-// first boost and still lets the machine roll a new ammo type.
+// classic PaP keeps the first pack boost and still rolls a new AAT
 ClassicPackAPunch(upgraded_weapon)
 {
 	if (!isdefined(upgraded_weapon))

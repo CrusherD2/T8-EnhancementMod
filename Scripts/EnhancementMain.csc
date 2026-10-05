@@ -16,29 +16,77 @@ autoexec InitSystem()
     if (util::is_frontend_map()) return; // frontend, i dont want to fucking loop again please
 
     system::register("T8EnhancementMod", &Init, &PostInit, undefined);
-    system::register("bo3_aat_names", &Bo3AatClientInit, undefined, "aat");
 }
 
 Bo3AatClientInit()
 {
-    if (isdefined(level.aat_initializing) && level.aat_initializing)
-        aat::register("zm_aat_fire_works", #"shield/aat_fire_works", "fireworks_classic");
-    callback::on_finalize_initialization(&Bo3AatClientNames);
+    // aat system may not be up yet when called from Init, so wait a bit for it
+    level thread Bo3AatClientInitThread();
+}
+
+Bo3AatClientInitThread()
+{
+    for (i = 0; i < 300; i++)
+    {
+        if (isdefined(level.aat_initializing))
+        {
+            if (level.aat_initializing)
+                break;
+        }
+        if (isdefined(level.aat))
+        {
+            if (isdefined(level.aat["zm_aat_kill_o_watt"]))
+                break;
+        }
+        waitframe(1);
+    }
+
+    if (isdefined(level.aat_initializing))
+    {
+        if (level.aat_initializing)
+            aat::register("zm_aat_fire_works", #"shield/aat_fire_works", "fireworks_classic");
+    }
+
+    // apply names here — do not hook finalize_initialization (AAR/exit re-fires it)
+    for (i = 0; i < 300; i++)
+    {
+        if (isdefined(level.aat))
+        {
+            if (isdefined(level.aat["zm_aat_kill_o_watt"]))
+            {
+                Bo3AatClientNames();
+                return;
+            }
+        }
+        waitframe(1);
+    }
 }
 
 Bo3AatClientNames()
 {
-    if (!isdefined(level.aat) || !isdefined(level.aat["zm_aat_kill_o_watt"]))
+    if (!isdefined(level.aat))
+        return;
+    if (!isdefined(level.aat["zm_aat_kill_o_watt"]))
         return;
 
     level.aat["zm_aat_kill_o_watt"].localized_string = #"shield/aat_dead_wire";
     level.aat["zm_aat_kill_o_watt"].n_index = 1;
-    level.aat["zm_aat_plasmatic_burst"].localized_string = #"shield/aat_blast_furnace";
-    level.aat["zm_aat_plasmatic_burst"].n_index = 2;
-    level.aat["zm_aat_brain_decay"].localized_string = #"shield/aat_turned";
-    level.aat["zm_aat_brain_decay"].n_index = 3;
-    level.aat["zm_aat_frostbite"].localized_string = #"shield/aat_thunder_wall";
-    level.aat["zm_aat_frostbite"].n_index = 4;
+
+    if (isdefined(level.aat["zm_aat_plasmatic_burst"]))
+    {
+        level.aat["zm_aat_plasmatic_burst"].localized_string = #"shield/aat_blast_furnace";
+        level.aat["zm_aat_plasmatic_burst"].n_index = 2;
+    }
+    if (isdefined(level.aat["zm_aat_brain_decay"]))
+    {
+        level.aat["zm_aat_brain_decay"].localized_string = #"shield/aat_turned";
+        level.aat["zm_aat_brain_decay"].n_index = 3;
+    }
+    if (isdefined(level.aat["zm_aat_frostbite"]))
+    {
+        level.aat["zm_aat_frostbite"].localized_string = #"shield/aat_thunder_wall";
+        level.aat["zm_aat_frostbite"].n_index = 4;
+    }
     if (isdefined(level.aat["zm_aat_fire_works"]))
     {
         level.aat["zm_aat_fire_works"].localized_string = #"shield/aat_fire_works";
@@ -116,11 +164,14 @@ Init()
     level._effect[#"bo3_furnace_burn"] = "zombie/fx_bgb_burned_out_fire_torso_zmb";
     level._effect[#"bo3_thunder"] = "zm_weapons/fx8_aat_elec_exp";
 
+    // bo3port_drink needs 3 bits for labels 0-6; the rest are 0/1 or counters
     clientfield::register("toplayer", "bo3port_power", 1, 1, "int", &Bo3PortPower, 0, 0);
     clientfield::register("toplayer", "bo3port_drink", 1, 3, "int", &Bo3PortDrink, 0, 0);
     clientfield::register("actor", "bo3_aat_furnace_blast", 1, 1, "counter", &Bo3FurnaceBlast, 0, 0);
     clientfield::register("actor", "bo3_aat_furnace_burn", 1, 1, "int", &Bo3FurnaceBurnFx, 0, 0);
     clientfield::register("actor", "bo3_aat_thunder", 1, 1, "counter", &Bo3ThunderFx, 0, 0);
+
+    Bo3AatClientInit();
 
     thread ShieldPublicPauseScript();
     thread HardcoreBossesScript();

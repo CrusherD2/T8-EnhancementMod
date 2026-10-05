@@ -176,9 +176,7 @@ GetPerkDataForMap()
 
 GetPerkModel(perk_type)
 {
-    // The bo3port plugin reskins these donors: Widow's Wine -> Jugger-Nog, Sleight -> Speed Cola,
-    // Revive -> Double Tap, Nuke -> Vulture Aid, Deadshot -> Who's Who, Marathon -> Elemental Pop,
-    // Mule Kick -> Wunderfizz.
+    // donor xmodels the client mesh-swaps for classic/chaos machines
     switch(perk_type)
     {
         case "jugg":
@@ -515,28 +513,6 @@ zm_perk_translate(hash_name) {
     }
 }
 
-WonderfizzDrinkLabel(hash_name)
-{
-    switch (hash_name)
-    {
-        case #"HasJugg":
-            return 1;
-        case #"specialty_fastreload":
-            return 2;
-        case #"specialty_doubletap2":
-        case #"specialty_rof":
-            return 3;
-        case #"specialty_vultureaid":
-            return 4;
-        case #"specialty_whoswho":
-            return 5;
-        case #"HasElemental":
-            return 6;
-        default:
-            return 0;
-    }
-}
-
 WonderfizzDisplayModel(hash_name)
 {
     if (BO4ChaosMap())
@@ -617,9 +593,9 @@ SetWonderfizzRewardModel(mdl_reward, hash_name)
     else
         mdl_reward SetScale(2);
 
-    label = WonderfizzDrinkLabel(hash_name);
+    // preview only; icon swap waits for PlayClassicPerkAnim
     level notify(#"bo3port_drink_clear");
-    SyncBo3PortDrink(label);
+    SyncBo3PortDrink(0);
 }
 
 RotateWonderfizzReward()
@@ -1118,9 +1094,10 @@ WaitTriggerWonderfizz()
         {
             is_slot_perk = false;
 
-            // play anim
-            e_player PlayPerkAnim(random_perks_get);
+            // Stock perk. Clear any classic label before the drink so the shared totem keeps its own icon.
+            level notify(#"bo3port_drink_clear");
             SyncBo3PortDrink(0);
+            e_player PlayPerkAnim(random_perks_get);
             mdl_reward delete();
 
             e_player waittilltimeout(2.5, #"burp", #"player_downed", #"disconnect", #"end_game", #"perk_abort_drinking");

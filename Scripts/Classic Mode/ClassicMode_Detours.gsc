@@ -348,6 +348,59 @@ detour zm_towers_challenges<scripts\zm\zm_towers_challenges.gsc>::function_1abdf
     }
 }
 
+Bo3ClassicPapActive()
+{
+    return GetDvarInt(#"shield_enh_ClassicMode", 0) && GetDvarInt(#"shield_enh_ClassicMode_ClassicPaP", 0) == 2;
+}
+
+Bo3ClassicRepackCost(player)
+{
+    cost = 2500;
+    if (isdefined(player) && isdefined(player.talisman_weapon_reducepapcost) && player.talisman_weapon_reducepapcost)
+        cost = int(max(10, cost - player.talisman_weapon_reducepapcost));
+    return cost;
+}
+
+// BO3 classic PaP: re-packs always cost 2500 (AAT only, no damage boost)
+detour zm_pap_util<scripts\zm_common\zm_pack_a_punch_util.gsc>::function_aaf2d8(player, weapon, b_weapon_supports_aat, var_a86430cb)
+{
+    if (Bo3ClassicPapActive() && isdefined(var_a86430cb) && var_a86430cb && isdefined(b_weapon_supports_aat) && b_weapon_supports_aat)
+    {
+        if (zombie_utility::function_d2dfacfd(#"zombie_powerup_bonfire_sale_on"))
+            return 500;
+        return Bo3ClassicRepackCost(player);
+    }
+    return self [[ @zm_pap_util<scripts\zm_common\zm_pack_a_punch_util.gsc>::function_aaf2d8 ]](player, weapon, b_weapon_supports_aat, var_a86430cb);
+}
+
+// BO3 classic PaP: after the first pack, hide "Boost Damage" from the re-pack prompt
+detour zm_pap_util<scripts\zm_common\zm_pack_a_punch_util.gsc>::update_hint_string(player)
+{
+    result = self [[ @zm_pap_util<scripts\zm_common\zm_pack_a_punch_util.gsc>::update_hint_string ]](player);
+
+    if (!result)
+        return result;
+    if (!Bo3ClassicPapActive())
+        return result;
+    if (!isdefined(player) || !isdefined(self.stub) || !isdefined(self.stub.zbarrier))
+        return result;
+
+    pap_machine = self.stub.zbarrier;
+    if (!pap_machine flag::get("pap_waiting_for_user"))
+        return result;
+
+    w_current = player getcurrentweapon();
+    if (!isdefined(w_current) || w_current == level.weaponnone)
+        return result;
+    if (!zm_weapons::is_weapon_upgraded(w_current))
+        return result;
+    if (!zm_weapons::weapon_supports_aat(w_current))
+        return result;
+
+    self sethintstring(#"shield/bo3_repack", Bo3ClassicRepackCost(player));
+    return true;
+}
+
 // element pop's
 detour aat<scripts\core_common\aat_shared.gsc>::aat_response(death, inflictor, attacker, damage, flags, mod, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex, surfacetype) {
    	if(!GetDvarInt(#"shield_enh_ClassicMode", 0))
@@ -401,7 +454,7 @@ detour aat<scripts\core_common\aat_shared.gsc>::aat_response(death, inflictor, a
     if (!isdefined(name)) {
         return;
     }
-    // Real chances stay on the register calls below. shield_enh_LocalTest forces every shot.
+    // LocalTest forces every shot; real chances are on the register calls
     // Dead Wire 20%, attacker 5s, global 2s. Blast Furnace 15%, attacker 15s.
     // Turned 15%, attacker 15s, global 8s, skipped on a killing blow.
     // Fire Works 10%, attacker 20s, global 10s. Thunder Wall 25%, attacker 10s.
@@ -1318,14 +1371,25 @@ detour zm_hero_weapon<scripts\zm_common\zm_hero_weapon.gsc>::function_9a100883(w
 
 Bo3AatTypes()
 {
-    // These are the four HUD slots the game already has, plus Fire Works. Renaming the slots keeps the
-    // icon index in sync. Kill-O-Watt is Dead Wire, Fire Bomb is Blast Furnace, Brain Rot is Turned,
-    // Cryofreeze is Thunder Wall.
+    // stock AAT slots remapped to classic names, plus Fire Works
     return array("zm_aat_kill_o_watt", "zm_aat_plasmatic_burst", "zm_aat_brain_decay", "zm_aat_fire_works", "zm_aat_frostbite");
 }
 
 Bo3AatServerInit()
 {
+    // aat system may not be up yet when called from Init, so wait a bit for it
+    level thread Bo3AatServerInitThread();
+}
+
+Bo3AatServerInitThread()
+{
+    for (i = 0; i < 300; i++)
+    {
+        if (isdefined(level.aat_in_use) && level.aat_in_use)
+            break;
+        waitframe(1);
+    }
+
     if (!(isdefined(level.aat_in_use) && level.aat_in_use))
         return;
 
@@ -1444,6 +1508,20 @@ AssignBo3Aat(upgraded_weapon)
     if (!isdefined(level.aat["zm_aat_kill_o_watt"]))
         return;
 
+    // BO3 style: first pack is damage only; AAT rolls start on the 2nd pack
+    key = zm_weapons::function_93cd8e76(weapon);
+    if (!isdefined(self.bo3_pap_count))
+        self.bo3_pap_count = [];
+    if (!isdefined(self.bo3_pap_count[key]))
+        self.bo3_pap_count[key] = 0;
+    self.bo3_pap_count[key]++;
+    if (self.bo3_pap_count[key] < 2)
+    {
+        self aat::remove(weapon);
+        self clientfield::set_to_player("aat_current", 0);
+        return;
+    }
+
     types = Bo3AatTypes();
     current = self.bo3_last_aat;
     pool = [];
@@ -1459,7 +1537,6 @@ AssignBo3Aat(upgraded_weapon)
     self.bo3_last_aat = pick;
     self aat::acquire(weapon, pick);
     self thread Bo3AatShow(weapon, pick);
-    self iprintln(Bo3AatLabel(pick));
 }
 
 Bo3AatShow(weapon, pick)
@@ -1534,6 +1611,9 @@ Bo3AatIsNormal(zombie)
         return false;
     if (isdefined(zombie.aat_turned) && zombie.aat_turned)
         return false;
+    // keep fireworks / splash off specials that break stock AAT / gib paths
+    if (isdefined(zombie.archetype) && zombie.archetype != #"zombie")
+        return false;
     if (isdefined(zombie.archetype) && isdefined(level.aat[#"zm_aat_kill_o_watt"]) && isdefined(level.aat[#"zm_aat_kill_o_watt"].immune_trigger) && isdefined(level.aat[#"zm_aat_kill_o_watt"].immune_trigger[zombie.archetype]) && level.aat[#"zm_aat_kill_o_watt"].immune_trigger[zombie.archetype])
         return false;
     return true;
@@ -1563,7 +1643,10 @@ Bo3AatNearby(origin, range)
 
 Bo3AatCanGib(zombie)
 {
+    // whitelist only stock zombies — specials like tigers crash gibhead
     if (!isdefined(zombie) || !isalive(zombie) || !isactor(zombie))
+        return false;
+    if (!isdefined(zombie.archetype) || zombie.archetype != #"zombie")
         return false;
     if (isdefined(zombie.no_gib) && zombie.no_gib)
         return false;
@@ -1571,29 +1654,27 @@ Bo3AatCanGib(zombie)
         return false;
     if (!isdefined(zombie.gibdef))
         return false;
-    if (isdefined(zombie.archetype))
-    {
-        kind = zombie.archetype;
-        if (kind == #"catalyst" || kind == #"tiger" || kind == #"zombie_dog" || kind == #"brutus" || kind == #"blightfather" || kind == #"gegenees" || kind == #"elephant")
-            return false;
-    }
     return true;
 }
 
 Bo3AatGib(zombie, attacker)
 {
-    if (!isalive(zombie))
+    if (!isdefined(zombie) || !isalive(zombie))
         return;
     if (Bo3AatCanGib(zombie))
     {
         gibserverutils::gibhead(zombie);
-        if (math::cointoss())
-            gibserverutils::gibleftarm(zombie);
-        else
-            gibserverutils::gibrightarm(zombie);
-        gibserverutils::giblegs(zombie);
+        if (isdefined(zombie) && isalive(zombie))
+        {
+            if (math::cointoss())
+                gibserverutils::gibleftarm(zombie);
+            else
+                gibserverutils::gibrightarm(zombie);
+        }
+        if (isdefined(zombie) && isalive(zombie))
+            gibserverutils::giblegs(zombie);
     }
-    if (isalive(zombie))
+    if (isdefined(zombie) && isalive(zombie))
         zombie dodamage(zombie.health + 666, zombie.origin, attacker);
 }
 
@@ -1697,6 +1778,8 @@ Bo3AatEffect(attacker, type)
     if (type == "fire_works" || type == "zm_aat_fire_works")
     {
         player = attacker;
+        if (!isdefined(player))
+            return;
         weapon = player getcurrentweapon();
         home = self.origin;
         Bo3AatGib(self, player);
@@ -1710,13 +1793,18 @@ Bo3AatEffect(attacker, type)
         gun waittill(#"movedone");
         for (i = 0; i < 10; i++)
         {
+            if (!isdefined(gun))
+                return;
             target = undefined;
             checks = 0;
             foreach (zombie in array::randomize(getaiteamarray(#"axis")))
             {
-                if (!isalive(zombie))
+                if (!isalive(zombie) || !Bo3AatIsNormal(zombie))
                     continue;
-                if (distancesquared(gun.origin, zombie getcentroid()) > 360000)
+                centroid = zombie getcentroid();
+                if (!isdefined(centroid))
+                    continue;
+                if (distancesquared(gun.origin, centroid) > 360000)
                     continue;
                 if (checks < 3 && !zombie damageconetrace(gun.origin))
                 {
@@ -1728,7 +1816,11 @@ Bo3AatEffect(attacker, type)
             }
             aim = gun.origin + anglestoforward((0, randomint(360), 0)) * 40;
             if (isdefined(target))
-                aim = target getcentroid();
+            {
+                centroid = target getcentroid();
+                if (isdefined(centroid))
+                    aim = centroid;
+            }
             gun.angles = vectortoangles(aim - gun.origin);
             flash = gun gettagorigin("tag_flash");
             if (!isdefined(flash))
@@ -1738,14 +1830,17 @@ Bo3AatEffect(attacker, type)
                 player playlocalsound(weapon.firesoundplayer);
             if (isdefined(weapon.firesound))
                 playsoundatposition(weapon.firesound, flash);
-            if (isalive(target))
+            if (isdefined(target) && isalive(target))
                 Bo3AatGib(target, player);
             util::wait_network_frame();
         }
+        if (!isdefined(gun))
+            return;
         gun moveto(home, 0.5);
         gun waittill(#"movedone");
         util::wait_network_frame();
-        gun delete();
+        if (isdefined(gun))
+            gun delete();
         return;
     }
 

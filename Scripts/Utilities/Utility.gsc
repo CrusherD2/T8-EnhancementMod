@@ -496,94 +496,6 @@ SetMainQuestStep(step_id)
     }
 }
 
-TestKeyBinds()
-{
-    level endon(#"end_game", #"game_ended");
-    level flag::wait_till("all_players_spawned");
-    level flag::wait_till("initial_blackscreen_passed");
-
-    player = getplayers()[0];
-    if (!isdefined(player))
-        return;
-
-    if (!isdefined(player.noclip_s))
-        player thread ANoclipBind();
-    player thread TestWatchNoclip();
-    player thread TestWatchRound();
-}
-
-TestWatchNoclip()
-{
-    self endon(#"disconnect", #"bled_out");
-    level endon(#"end_game", #"game_ended");
-    while (true)
-    {
-        if (ShieldGetKey(84))
-        {
-            if (isdefined(self.noclip_s) && self.noclip_s)
-                self.noclip_s = false;
-            else
-                self.noclip_s = true;
-            wait 0.25;
-        }
-        waitframe(1);
-    }
-}
-
-TestWatchRound()
-{
-    self endon(#"disconnect");
-    level endon(#"end_game", #"game_ended");
-    while (true)
-    {
-        if (ShieldGetKey(89))
-        {
-            next = zm_round_logic::get_round_number() + 1;
-            level thread zm_utility::zombie_goto_round(next);
-            level thread zm_game_module::zombie_goto_round(next);
-            self iprintlnbold("Round " + next);
-            wait 0.25;
-        }
-        waitframe(1);
-    }
-}
-
-TestOpenMap()
-{
-    if (!GetDvarInt(#"shield_enh_LocalTest", 0))
-        return;
-
-    level thread ActivatePAP();
-    level thread TestKeyBinds();
-
-    level flag::wait_till("all_players_spawned");
-    level flag::wait_till("initial_blackscreen_passed");
-    wait 4;
-
-    player = getplayers()[0];
-    doors = getentarray("zombie_door", "targetname");
-    doors = arraycombine(doors, getentarray("zombie_debris", "targetname"), 0, 0);
-    doors = arraycombine(doors, getentarray("zombie_airlock_buy", "targetname"), 0, 0);
-    foreach (door in doors)
-        door notify(#"trigger", {#activator:player, #is_forced:1});
-
-    level flag::set("power_on");
-    level flag::set("power_on1");
-    level flag::set("power_on2");
-    level flag::set("power_on3");
-    level flag::set("pap_machine_active");
-    level flag::set("pap_power_ready");
-    level flag::set(#"pap_quest_completed");
-    level flag::set(#"zm_towers_pap_quest_completed");
-
-    foreach (guy in getplayers())
-    {
-        guy zm_score::add_to_player_score(50000);
-        guy.godmode_s = true;
-        guy thread GodModePlayer();
-    }
-}
-
 ActivatePAP()
 {
     level.saved_pap_done = true;
@@ -982,9 +894,7 @@ PlayPerkAnim(str_perk)
     self thread gestures::function_f3e2696f(self, weapon, undefined, 2.5, undefined, undefined, undefined);
 }
 
-// Classic perks drink a BO4 perk's bottle/totem; while bo3port_drink holds the Classic perk's number the
-// client swaps that bottle's label (or the totem's icon) for the Classic perk's.
-// Each player gets the field on themselves so every client applies the same value.
+// Classic drink label for the shared BO4 bottle/totem swap
 SyncBo3PortPower(value)
 {
     level.bo3port_power = value;
@@ -1025,8 +935,7 @@ PlayClassicPerkAnim(str_perk)
     SyncBo3PortDrink(label);
     if (str_perk == #"specialty_awareness" && BO4ChaosMap())
     {
-        // Death Perception is not placed on every Chaos map, so the stock drink gesture has no totem
-        // and falls back to the Jugger-Nog one. Equip that totem directly; its emblem is the Vulture swap.
+        // chaos maps may lack DP, so force its totem for the Vulture swap
         self thread gestures::function_f3e2696f(self, getweapon(#"zombie_perk_totem_death_perception"), undefined, 2.5,
             undefined, undefined, undefined);
     }

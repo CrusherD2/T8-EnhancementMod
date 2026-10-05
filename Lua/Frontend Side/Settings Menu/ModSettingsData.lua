@@ -174,7 +174,7 @@ local SETTINGS = {
         { name = @"shield/classicmode_gums",  desc = @"shield/classicmode_gums_desc",  dvar = "shield_enh_Gums",                   choices = "toggle" },
         { name = @"shield/classic_loadouts",  desc = @"shield/classic_loadouts_desc",  dvar = "shield_enh_ClassicMode_Loadouts",   choices = "toggle", json_default = true },
         { name = @"shield/double_tab_toggle", desc = @"shield/double_tab_toggle_desc", dvar = "shield_enh_ClassicMode_DoubleTab2", choices = "toggle" },
-        { name = @"shield/classic_pap", desc = @"shield/classic_pap_desc", dvar = "shield_enh_ClassicMode_ClassicPaP", json_type = "int32_t", json_default = 0,
+        { name = @"shield/classic_pap", desc = @"shield/classic_pap_desc", dvar = "shield_enh_ClassicMode_ClassicPaP", json_type = "uint64_t", json_default = 0,
             choices = {
                 { option = Engine[@"hash_4F9F1239CFD921FE"]( @"shield/pap_off" ), value = 0, default = true },
                 { option = Engine[@"hash_4F9F1239CFD921FE"]( @"shield/pap_bo1" ), value = 1 },
@@ -182,6 +182,9 @@ local SETTINGS = {
             }
         },
         { name = @"shield/bo3_aats",          desc = @"shield/bo3_aats_desc",          dvar = "shield_enh_ClassicMode_Bo3Aat",     choices = "toggle", json_default = true },
+    },
+    ChaosStyle = {
+        { name = @"shield/chaos_perks", desc = @"shield/chaos_perks_desc", dvar = "shield_enh_ClassicMode_ChaosPerks", choices = "toggle" },
     },
 }
 
@@ -203,9 +206,6 @@ for _, settings_array in pairs(SETTINGS) do
         ReadJson( setting.dvar, key, jtype, jdefault )
     end
 end
-
--- Local only. Rename project-bo4/mods/EnhancementModT8/local_test.json and this stays off.
-Engine[@"exec"]( CTRL, ('readjson %s "" %s %s %s true %s'):format("shield_enh_LocalTest", "enabled", "bool", "false", "project-bo4/mods/EnhancementModT8/local_test.json") )
 
 Engine[@"setdvar"]( "shield_search_settings", "" )
 
@@ -277,6 +277,7 @@ DataSources.ShieldClassicSettingsRelated = DataSourceHelpers.ListSetup( "ShieldC
         "shield_enh_AllWeaponsinBox",
         "shield_enh_AltHud",
         "shield_enh_second_grenade",
+        "shield_enh_ClassicMode_ChaosPerks",
     }) do
         InsertSetting(list, controller, SETTINGS_BY_DVAR[dvar])
     end

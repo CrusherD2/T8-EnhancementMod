@@ -165,6 +165,7 @@ autoexec InitSystem()
 
     // have to register it anyways
     clientfield::register("toplayer", "" + #"shield_paused_hud", 1, 1, "int");
+    // bo3port_drink needs 3 bits for labels 0-6; the rest are 0/1 or counters
     clientfield::register("toplayer", "bo3port_power", 1, 1, "int");
     clientfield::register("toplayer", "bo3port_drink", 1, 3, "int");
     clientfield::register("actor", "bo3_aat_furnace_blast", 1, 1, "counter");
@@ -180,7 +181,6 @@ autoexec InitSystem()
     */
 
     system::register("T8EnhancementMod", &Init, &PostInit, undefined);
-    system::register("bo3_aat_names", &Bo3AatServerInit, undefined, "aat");
 }
 
 Init()
@@ -197,6 +197,7 @@ Init()
     }
 
     ShieldLog("^1Enhancement Mod Loaded!");
+    Bo3AatServerInit();
     
     thread SaveGames();
     thread PracticeMode();
@@ -239,7 +240,6 @@ Setup()
     thread SuperPerksMode();
     thread MenuResponseSystem();
     thread DebugMode();
-    thread TestOpenMap();
     thread AddZombieHealthBars();
     thread AddZombieDamageNums();
     thread MusicWatcher();
