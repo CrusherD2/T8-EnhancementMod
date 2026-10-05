@@ -1610,16 +1610,6 @@
         },
         {
             "type": "localizeentry",
-            "name": "shield/chaos_perks",
-            "value": "Chaos styled perks for chaos maps"
-        },
-        {
-            "type": "localizeentry",
-            "name": "shield/chaos_perks_desc",
-            "value": "On IX, Ancient Evil, Voyage of Despair, and Dead of the Night, the classic perk machines use the Chaos models. Aether maps keep the Black Ops 3 machines."
-        },
-        {
-            "type": "localizeentry",
             "name": "shield/aat_dead_wire",
             "value": "Dead Wire"
         },

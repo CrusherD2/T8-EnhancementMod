@@ -183,9 +183,6 @@ local SETTINGS = {
         },
         { name = @"shield/bo3_aats",          desc = @"shield/bo3_aats_desc",          dvar = "shield_enh_ClassicMode_Bo3Aat",     choices = "toggle", json_default = true },
     },
-    ChaosStyle = {
-        { name = @"shield/chaos_perks", desc = @"shield/chaos_perks_desc", dvar = "shield_enh_ClassicMode_ChaosPerks", choices = "toggle" },
-    },
 }
 
 -- lookup for classic realted ig
@@ -277,7 +274,6 @@ DataSources.ShieldClassicSettingsRelated = DataSourceHelpers.ListSetup( "ShieldC
         "shield_enh_AllWeaponsinBox",
         "shield_enh_AltHud",
         "shield_enh_second_grenade",
-        "shield_enh_ClassicMode_ChaosPerks",
     }) do
         InsertSetting(list, controller, SETTINGS_BY_DVAR[dvar])
     end
