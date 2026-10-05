@@ -78,10 +78,8 @@ CoD.SettingsModListData.new = function ( f1_arg0, f1_arg1, f1_arg2, f1_arg3, f1_
 		local f7_local0 = model:get()
 		if f7_local0 ~= nil then
 			SettingDescription:setText( Engine[@"hash_4F9F1239CFD921FE"]( f7_local0 ) )
-
-			--if Dvar[@"shield_enh_datasource_get"]:get() == "SearchSettingsData" then
-				self.SettingsList:updateDataSource()
-			--end
+			-- Do NOT call updateDataSource() here. Classic Mode opens a second
+			-- related list, and refreshing on every desc change freezes the menu.
 		end
 	end )
 
@@ -232,7 +230,7 @@ LUI.createMenu.Shield_EnhID_SettingsPopup = function ( f1_arg0, f1_arg1 )
 		-- height ~22px matches the normal in-list desc size (was 60px and looked huge)
 		local ClassicSettingDescription = LUI.UIText.new( 0, 0, 48, 560, 1, 1, -168, -146 )
 		ClassicSettingDescription:setRGB( ColorSet.T8__OFF__WHITE.r, ColorSet.T8__OFF__WHITE.g, ColorSet.T8__OFF__WHITE.b )
-		ClassicSettingDescription:setTTF("notosans_regular")
+		ClassicSettingDescription:setTTF("notosans_bold")
 		ClassicSettingDescription:setBackingType( 2 )
 		ClassicSettingDescription:setBackingColor( 0.04, 0.81, 1 )
 		ClassicSettingDescription:setBackingAlpha( 0.01 )
